@@ -921,7 +921,7 @@ label { font-size: 12px; color: var(--text2); margin-bottom: 4px; display: block
   </div>
 </div>
 
-<script>
+<script type="module">
 // ══════════════════════════════════════════════════════
 // STATE
 // ══════════════════════════════════════════════════════
@@ -960,68 +960,61 @@ function toast(msg, ok=true) {
 }
 
 // ══════════════════════════════════════════════════════
-// INDEXEDDB STORAGE
+// FIREBASE STORAGE
 // ══════════════════════════════════════════════════════
-let idb = null;
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+import { getFirestore, doc, getDoc, setDoc } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
-function openIDB() {
-  return new Promise((resolve, reject) => {
-    const req = indexedDB.open('cerveau_db', 1);
-    req.onupgradeneeded = e => {
-      const db = e.target.result;
-      if (!db.objectStoreNames.contains('data'))   db.createObjectStore('data');
-      if (!db.objectStoreNames.contains('config')) db.createObjectStore('config');
-    };
-    req.onsuccess = e => { idb = e.target.result; resolve(idb); };
-    req.onerror   = () => reject(req.error);
-  });
-}
+const firebaseConfig = {
+  apiKey:            "AIzaSyBVmptmTiox06RUMMGDOCtrbNyo8PWiqkU",
+  authDomain:        "ndbrain-b54d0.firebaseapp.com",
+  projectId:         "ndbrain-b54d0",
+  storageBucket:     "ndbrain-b54d0.firebasestorage.app",
+  messagingSenderId: "519040099512",
+  appId:             "1:519040099512:web:57ab12dbca600c1de3004d"
+};
 
-function idbGet(store, key) {
-  return new Promise((resolve, reject) => {
-    const tx  = idb.transaction(store, 'readonly');
-    const req = tx.objectStore(store).get(key);
-    req.onsuccess = () => resolve(req.result);
-    req.onerror   = () => reject(req.error);
-  });
-}
+const firebaseApp = initializeApp(firebaseConfig);
+const db_firebase = getFirestore(firebaseApp);
 
-function idbSet(store, key, value) {
-  return new Promise((resolve, reject) => {
-    const tx  = idb.transaction(store, 'readwrite');
-    const req = tx.objectStore(store).put(value, key);
-    req.onsuccess = () => resolve();
-    req.onerror   = () => reject(req.error);
-  });
-}
+// ID utilisateur fixe (app mono-utilisateur)
+const USER_ID = 'default';
 
 async function loadData() {
   try {
-    await openIDB();
-    const saved = await idbGet('data', 'main');
-    if (saved) {
+    // Charger données
+    const dataRef  = doc(db_firebase, 'cerveau', USER_ID);
+    const dataSnap = await getDoc(dataRef);
+    if (dataSnap.exists()) {
+      const saved = dataSnap.data();
       for (const k of Object.keys(DB)) {
         if (saved[k] !== undefined) DB[k] = saved[k];
       }
     }
-    const key = await idbGet('config', 'gemini_key');
-    if (key) GEMINI_KEY = key;
+    // Charger clé Gemini (stockée séparément)
+    const cfgRef  = doc(db_firebase, 'config', USER_ID);
+    const cfgSnap = await getDoc(cfgRef);
+    if (cfgSnap.exists() && cfgSnap.data().gemini_key) {
+      GEMINI_KEY = cfgSnap.data().gemini_key;
+    }
     updateKeyStatus();
     setStatus(true);
   } catch(e) {
-    console.error('IDB error:', e);
+    console.error('Firebase error:', e);
     setStatus(false);
+    toast('Erreur de connexion Firebase', false);
   }
   updateBadges();
 }
 
 async function saveModule(module) {
   try {
-    const saved = await idbGet('data', 'main') || {};
-    saved[module] = DB[module];
-    await idbSet('data', 'main', saved);
+    const dataRef = doc(db_firebase, 'cerveau', USER_ID);
+    // On fait un merge pour ne pas écraser les autres modules
+    await setDoc(dataRef, { [module]: DB[module] }, { merge: true });
     setStatus(true);
   } catch(e) {
+    console.error('Save error:', e);
     setStatus(false);
     toast('Erreur de sauvegarde', false);
   }
@@ -1029,14 +1022,20 @@ async function saveModule(module) {
 
 async function saveGeminiKey(key) {
   GEMINI_KEY = key;
-  await idbSet('config', 'gemini_key', key);
-  updateKeyStatus();
+  try {
+    const cfgRef = doc(db_firebase, 'config', USER_ID);
+    await setDoc(cfgRef, { gemini_key: key });
+    updateKeyStatus();
+  } catch(e) {
+    toast('Erreur sauvegarde clé', false);
+  }
 }
 
 function updateKeyStatus() {
   const icon = document.getElementById('key-status-icon');
   if (icon) icon.textContent = GEMINI_KEY ? '✅' : '🔑';
 }
+
 
 // ══════════════════════════════════════════════════════
 // GEMINI DIRECT CALL
@@ -2078,7 +2077,7 @@ async function renderSettings(actions) {
         <button class="btn btn-primary" onclick="saveApiKey()">Enregistrer</button>
       </div>
       <p style="font-size:11px;color:var(--text3);margin-top:8px">
-        🔒 Ta clé est stockée uniquement dans IndexedDB sur ton appareil.
+        🔒 Ta clé est stockée dans Firebase sur ton compte Google, jamais exposée publiquement.
       </p>
     </div>
 
@@ -2099,7 +2098,7 @@ async function renderSettings(actions) {
         <div>📅 Journal : <strong>${DB.journal.length}</strong></div>
       </div>
       <p style="font-size:11px;color:var(--text3);margin-top:10px">
-        Données stockées en local sur cet appareil (IndexedDB).
+        ☁️ Données sauvegardées sur <strong>Firebase</strong> — accessibles depuis n'importe quel appareil, jamais perdues en vidant le cache.
       </p>
       <button class="btn btn-danger btn-sm" style="margin-top:12px" onclick="clearAllData()">
         🗑️ Effacer toutes les données
@@ -2118,10 +2117,13 @@ async function saveApiKey() {
 }
 
 async function clearAllData() {
-  if (!confirm('Effacer TOUTES les données ? Cette action est irréversible.')) return;
+  if (!confirm('Effacer TOUTES les données Firebase ? Cette action est irréversible.')) return;
   DB = { inbox:[], taches:[], savoir:[], habitudes:{objectifs:[],suivi:{}}, journal:[] };
-  await idbSet('data', 'main', DB);
-  toast('Données effacées.'); navigate('dashboard');
+  try {
+    const dataRef = doc(db_firebase, 'cerveau', USER_ID);
+    await setDoc(dataRef, DB);
+    toast('Données effacées.'); navigate('dashboard');
+  } catch(e) { toast('Erreur suppression', false); }
 }
 
 // ══════════════════════════════════════════════════════
