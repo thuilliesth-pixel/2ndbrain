@@ -1,0 +1,2177 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="theme-color" content="#0f0f0f">
+<meta name="description" content="Ton 2ème cerveau numérique — Inbox, Tâches, Savoir, Habitudes, Journal + IA Gemini">
+<title>🧠 Mon 2ème Cerveau</title>
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="icon-192.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=DM+Sans:ital,wght@0,300;0,400;0,500;1,300&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg:        #0f0f0f;
+  --bg1:       #161616;
+  --bg2:       #1e1e1e;
+  --bg3:       #252525;
+  --bg4:       #2c2c2c;
+  --border:    #2e2e2e;
+  --border2:   #3a3a3a;
+  --text:      #e8e8e8;
+  --text2:     #a0a0a0;
+  --text3:     #666;
+  --accent:    #7c6aff;
+  --accent2:   #9d8fff;
+  --inbox:     #00b4d8;
+  --task:      #06d6a0;
+  --savoir:    #f4a261;
+  --habit:     #c77dff;
+  --journal:   #ff6b9d;
+  --danger:    #ff4757;
+  --radius:    10px;
+  --radius2:   6px;
+  --shadow:    0 4px 24px rgba(0,0,0,.5);
+  --font:      'DM Sans', sans-serif;
+  --font-head: 'Syne', sans-serif;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  font-family: var(--font);
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+  font-size: 14px;
+  line-height: 1.6;
+}
+
+/* ── LAYOUT ── */
+#app { display: flex; height: 100vh; overflow: hidden; }
+
+/* ── SIDEBAR ── */
+#sidebar {
+  width: 240px;
+  min-width: 240px;
+  background: var(--bg1);
+  border-right: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  padding: 0;
+  overflow-y: auto;
+}
+
+.sidebar-logo {
+  padding: 22px 20px 16px;
+  border-bottom: 1px solid var(--border);
+}
+.sidebar-logo h1 {
+  font-family: var(--font-head);
+  font-size: 16px;
+  font-weight: 800;
+  letter-spacing: -.3px;
+  color: var(--text);
+}
+.sidebar-logo p {
+  font-size: 11px;
+  color: var(--text3);
+  margin-top: 2px;
+}
+
+.sidebar-section {
+  padding: 16px 12px 8px;
+}
+.sidebar-section-label {
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 1.2px;
+  text-transform: uppercase;
+  color: var(--text3);
+  padding: 0 8px;
+  margin-bottom: 6px;
+}
+
+.nav-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 10px;
+  border-radius: var(--radius2);
+  cursor: pointer;
+  transition: background .15s;
+  color: var(--text2);
+  font-size: 13.5px;
+  font-weight: 400;
+  position: relative;
+}
+.nav-item:hover { background: var(--bg3); color: var(--text); }
+.nav-item.active { background: var(--bg3); color: var(--text); }
+.nav-item.active::before {
+  content: '';
+  position: absolute;
+  left: 0; top: 20%; height: 60%;
+  width: 3px; border-radius: 2px;
+}
+.nav-item[data-module="inbox"].active::before    { background: var(--inbox); }
+.nav-item[data-module="taches"].active::before   { background: var(--task); }
+.nav-item[data-module="savoir"].active::before   { background: var(--savoir); }
+.nav-item[data-module="habitudes"].active::before{ background: var(--habit); }
+.nav-item[data-module="journal"].active::before  { background: var(--journal); }
+.nav-item[data-module="dashboard"].active::before{ background: var(--accent); }
+
+.nav-icon { font-size: 16px; width: 22px; text-align: center; }
+.nav-badge {
+  margin-left: auto;
+  background: var(--bg4);
+  color: var(--text3);
+  font-size: 10px;
+  padding: 1px 6px;
+  border-radius: 10px;
+  min-width: 20px;
+  text-align: center;
+}
+
+.sidebar-status {
+  margin-top: auto;
+  padding: 12px 16px;
+  border-top: 1px solid var(--border);
+  font-size: 11px;
+  color: var(--text3);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.status-dot {
+  width: 6px; height: 6px;
+  border-radius: 50%;
+  background: var(--task);
+  box-shadow: 0 0 6px var(--task);
+}
+
+/* ── MAIN ── */
+#main {
+  flex: 1;
+  overflow-y: auto;
+  background: var(--bg);
+  display: flex;
+  flex-direction: column;
+}
+
+/* ── TOPBAR ── */
+.topbar {
+  padding: 16px 32px;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  background: var(--bg);
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  backdrop-filter: blur(12px);
+}
+.topbar-title {
+  font-family: var(--font-head);
+  font-size: 20px;
+  font-weight: 700;
+  flex: 1;
+}
+.topbar-actions { display: flex; gap: 8px; }
+
+/* ── CONTENT ── */
+.content { padding: 28px 32px; flex: 1; }
+
+/* ── BUTTONS ── */
+.btn {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 7px 14px;
+  border-radius: var(--radius2);
+  border: none;
+  cursor: pointer;
+  font-family: var(--font);
+  font-size: 13px;
+  font-weight: 500;
+  transition: all .15s;
+}
+.btn-primary { background: var(--accent); color: #fff; }
+.btn-primary:hover { background: var(--accent2); }
+.btn-ghost { background: transparent; color: var(--text2); border: 1px solid var(--border2); }
+.btn-ghost:hover { background: var(--bg3); color: var(--text); }
+.btn-danger { background: transparent; color: var(--danger); border: 1px solid var(--danger); }
+.btn-danger:hover { background: var(--danger); color: #fff; }
+.btn-sm { padding: 4px 10px; font-size: 12px; }
+.btn-icon { padding: 6px 8px; }
+
+/* ── CARDS / PANELS ── */
+.card {
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 20px;
+}
+.card-sm { padding: 14px 16px; }
+
+/* ── FORM ELEMENTS ── */
+input[type=text], input[type=date], input[type=url],
+input[type=number], textarea, select {
+  background: var(--bg3);
+  border: 1px solid var(--border2);
+  border-radius: var(--radius2);
+  color: var(--text);
+  font-family: var(--font);
+  font-size: 13px;
+  padding: 8px 12px;
+  width: 100%;
+  transition: border-color .15s;
+  outline: none;
+}
+input:focus, textarea:focus, select:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px rgba(124,106,255,.15);
+}
+select option { background: var(--bg3); }
+textarea { resize: vertical; min-height: 80px; }
+label { font-size: 12px; color: var(--text2); margin-bottom: 4px; display: block; }
+
+.form-row { display: grid; gap: 12px; margin-bottom: 12px; }
+.form-row.cols-2 { grid-template-columns: 1fr 1fr; }
+.form-row.cols-3 { grid-template-columns: 1fr 1fr 1fr; }
+.form-row.cols-4 { grid-template-columns: 1fr 1fr 1fr 1fr; }
+.form-group { display: flex; flex-direction: column; gap: 4px; }
+
+/* ── MODAL ── */
+.modal-overlay {
+  position: fixed; inset: 0;
+  background: rgba(0,0,0,.7);
+  backdrop-filter: blur(4px);
+  z-index: 100;
+  display: flex; align-items: center; justify-content: center;
+  opacity: 0; pointer-events: none;
+  transition: opacity .2s;
+}
+.modal-overlay.open { opacity: 1; pointer-events: all; }
+.modal {
+  background: var(--bg2);
+  border: 1px solid var(--border2);
+  border-radius: 14px;
+  padding: 28px;
+  width: 560px;
+  max-width: 95vw;
+  max-height: 90vh;
+  overflow-y: auto;
+  box-shadow: var(--shadow);
+  transform: translateY(16px);
+  transition: transform .2s;
+}
+.modal-overlay.open .modal { transform: translateY(0); }
+.modal-header {
+  display: flex; align-items: center; justify-content: space-between;
+  margin-bottom: 20px;
+}
+.modal-header h2 { font-family: var(--font-head); font-size: 17px; font-weight: 700; }
+.modal-footer { display: flex; justify-content: flex-end; gap: 8px; margin-top: 20px; }
+
+/* ── TABLE ── */
+.data-table { width: 100%; border-collapse: collapse; }
+.data-table th {
+  text-align: left; padding: 8px 12px;
+  font-size: 11px; font-weight: 600; letter-spacing: .8px; text-transform: uppercase;
+  color: var(--text3); border-bottom: 1px solid var(--border);
+  background: var(--bg1);
+}
+.data-table td {
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--border);
+  font-size: 13px;
+  vertical-align: middle;
+}
+.data-table tr:hover td { background: var(--bg2); }
+.data-table tr:last-child td { border-bottom: none; }
+
+/* ── TAGS / BADGES ── */
+.tag {
+  display: inline-flex; align-items: center;
+  padding: 2px 8px; border-radius: 20px;
+  font-size: 11px; font-weight: 500;
+  background: var(--bg4); color: var(--text2);
+}
+.tag.inbox    { background: rgba(0,180,216,.15); color: var(--inbox); }
+.tag.task     { background: rgba(6,214,160,.15); color: var(--task); }
+.tag.savoir   { background: rgba(244,162,97,.15); color: var(--savoir); }
+.tag.habit    { background: rgba(199,125,255,.15); color: var(--habit); }
+.tag.journal  { background: rgba(255,107,157,.15); color: var(--journal); }
+
+.priority-high   { color: #ff4757; }
+.priority-medium { color: #f4a261; }
+.priority-low    { color: var(--task); }
+
+/* ── STATUS PILL ── */
+.pill {
+  display: inline-flex; align-items: center; gap: 4px;
+  padding: 3px 10px; border-radius: 20px;
+  font-size: 11px; font-weight: 500;
+}
+.pill-todo    { background: rgba(255,255,255,.07); color: var(--text2); }
+.pill-doing   { background: rgba(0,180,216,.2); color: var(--inbox); }
+.pill-wait    { background: rgba(244,162,97,.2); color: var(--savoir); }
+.pill-done    { background: rgba(6,214,160,.2); color: var(--task); }
+.pill-cancel  { background: rgba(255,71,87,.15); color: var(--danger); }
+
+/* ── DASHBOARD ── */
+.kpi-grid { display: grid; grid-template-columns: repeat(5,1fr); gap: 12px; margin-bottom: 28px; }
+.kpi-card {
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 18px 16px;
+  position: relative;
+  overflow: hidden;
+  cursor: pointer;
+  transition: border-color .2s, transform .15s;
+}
+.kpi-card:hover { transform: translateY(-2px); }
+.kpi-card::before {
+  content: '';
+  position: absolute; top: 0; left: 0; right: 0; height: 2px;
+}
+.kpi-card.inbox::before   { background: var(--inbox); }
+.kpi-card.taches::before  { background: var(--task); }
+.kpi-card.savoir::before  { background: var(--savoir); }
+.kpi-card.habitudes::before { background: var(--habit); }
+.kpi-card.journal::before { background: var(--journal); }
+.kpi-card:hover { border-color: var(--border2); }
+.kpi-icon { font-size: 22px; margin-bottom: 10px; }
+.kpi-value { font-family: var(--font-head); font-size: 28px; font-weight: 800; line-height: 1; }
+.kpi-label { font-size: 12px; color: var(--text2); margin-top: 4px; }
+
+.dash-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+.dash-section h3 {
+  font-family: var(--font-head); font-size: 13px; font-weight: 600;
+  color: var(--text2); letter-spacing: .5px;
+  margin-bottom: 10px; padding-bottom: 8px;
+  border-bottom: 1px solid var(--border);
+}
+
+/* ── INBOX ── */
+.inbox-quick {
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 16px;
+  margin-bottom: 20px;
+  display: flex; gap: 10px; align-items: flex-end;
+}
+.inbox-quick textarea { flex: 1; min-height: 42px; height: 42px; }
+.inbox-item {
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 14px 16px;
+  margin-bottom: 8px;
+  display: flex; align-items: flex-start; gap: 12px;
+  transition: border-color .15s;
+}
+.inbox-item:hover { border-color: var(--border2); }
+.inbox-item-content { flex: 1; }
+.inbox-item-text { font-size: 13.5px; line-height: 1.5; }
+.inbox-item-meta { display: flex; gap: 8px; margin-top: 6px; flex-wrap: wrap; align-items: center; }
+.inbox-item-actions { display: flex; gap: 4px; opacity: 0; transition: opacity .15s; }
+.inbox-item:hover .inbox-item-actions { opacity: 1; }
+
+/* ── TASKS ── */
+.task-filters {
+  display: flex; gap: 8px; margin-bottom: 16px; flex-wrap: wrap;
+}
+.filter-btn {
+  padding: 5px 12px;
+  border-radius: 20px;
+  border: 1px solid var(--border2);
+  background: transparent;
+  color: var(--text2);
+  font-size: 12px;
+  cursor: pointer;
+  transition: all .15s;
+  font-family: var(--font);
+}
+.filter-btn.active, .filter-btn:hover {
+  background: var(--bg3);
+  color: var(--text);
+  border-color: var(--border2);
+}
+.task-item {
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 12px 16px;
+  margin-bottom: 8px;
+  display: flex; align-items: center; gap: 12px;
+  transition: border-color .15s;
+}
+.task-item:hover { border-color: var(--border2); }
+.task-item.done { opacity: .5; }
+.task-item.done .task-title { text-decoration: line-through; }
+.task-check {
+  width: 18px; height: 18px; border-radius: 5px;
+  border: 1.5px solid var(--border2);
+  cursor: pointer; flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center;
+  transition: all .15s;
+}
+.task-check.checked { background: var(--task); border-color: var(--task); }
+.task-content { flex: 1; }
+.task-title { font-size: 13.5px; }
+.task-meta { display: flex; gap: 8px; margin-top: 4px; flex-wrap: wrap; align-items: center; }
+.task-actions { display: flex; gap: 4px; opacity: 0; transition: opacity .15s; }
+.task-item:hover .task-actions { opacity: 1; }
+
+/* ── SAVOIR ── */
+.savoir-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 12px; }
+.savoir-card {
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 16px;
+  transition: border-color .15s, transform .15s;
+  display: flex; flex-direction: column; gap: 8px;
+}
+.savoir-card:hover { border-color: var(--border2); transform: translateY(-2px); }
+.savoir-title { font-size: 14px; font-weight: 500; line-height: 1.4; }
+.savoir-meta { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+.savoir-resume {
+  font-size: 12px; color: var(--text2);
+  line-height: 1.6;
+  border-top: 1px solid var(--border);
+  padding-top: 8px;
+}
+.stars { color: var(--savoir); font-size: 12px; }
+
+/* ── HABITUDES ── */
+.habit-header-grid {
+  display: grid;
+  gap: 2px;
+  margin-bottom: 6px;
+}
+.habit-day-labels {
+  display: flex; gap: 2px;
+  padding-left: 200px;
+}
+.habit-day-label {
+  width: 26px; text-align: center; font-size: 9px; color: var(--text3); flex-shrink: 0;
+}
+.habit-row {
+  display: flex; align-items: center; gap: 2px;
+  padding: 3px 0;
+}
+.habit-name {
+  width: 194px; min-width: 194px; font-size: 13px;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  padding-right: 8px; color: var(--text);
+}
+.habit-cell {
+  width: 26px; height: 26px;
+  border-radius: 4px;
+  background: var(--bg3);
+  border: 1px solid var(--border);
+  cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 11px;
+  flex-shrink: 0;
+  transition: background .1s;
+  user-select: none;
+}
+.habit-cell.done  { background: rgba(6,214,160,.3); border-color: var(--task); }
+.habit-cell.skip  { background: rgba(255,71,87,.2); border-color: var(--danger); }
+.habit-cell.today { box-shadow: 0 0 0 2px var(--accent); }
+.habit-pct {
+  margin-left: 6px; font-size: 11px; font-weight: 600;
+  color: var(--habit); min-width: 34px; text-align: right;
+}
+
+/* ── JOURNAL ── */
+.journal-entry {
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 20px;
+  margin-bottom: 10px;
+  transition: border-color .15s;
+}
+.journal-entry:hover { border-color: var(--border2); }
+.journal-date {
+  font-family: var(--font-head); font-size: 12px; font-weight: 600;
+  color: var(--text3); margin-bottom: 8px;
+  display: flex; align-items: center; gap: 10px;
+}
+.journal-content { font-size: 13.5px; line-height: 1.7; color: var(--text); white-space: pre-wrap; }
+.journal-sections { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-top: 12px; }
+.journal-section h4 { font-size: 11px; color: var(--text3); font-weight: 600; margin-bottom: 4px; }
+.journal-section p  { font-size: 12.5px; color: var(--text2); line-height: 1.6; }
+
+/* ── EMPTY STATE ── */
+.empty {
+  text-align: center; padding: 60px 20px;
+  color: var(--text3);
+}
+.empty-icon { font-size: 40px; margin-bottom: 12px; }
+.empty h3 { font-size: 15px; color: var(--text2); margin-bottom: 6px; }
+.empty p { font-size: 13px; }
+
+/* ── SCROLLBAR ── */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--bg4); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: var(--border2); }
+
+/* ── TOAST ── */
+#toast {
+  position: fixed; bottom: 24px; right: 24px;
+  background: var(--bg3); border: 1px solid var(--border2);
+  border-radius: 8px; padding: 10px 18px;
+  font-size: 13px; color: var(--text);
+  box-shadow: var(--shadow);
+  opacity: 0; transform: translateY(8px);
+  transition: all .25s;
+  pointer-events: none; z-index: 999;
+}
+#toast.show { opacity: 1; transform: translateY(0); }
+
+.month-selector {
+  display: flex; align-items: center; gap: 10px; margin-bottom: 16px;
+}
+.month-selector button {
+  background: var(--bg3); border: 1px solid var(--border2);
+  color: var(--text); padding: 5px 12px; border-radius: var(--radius2);
+  cursor: pointer; font-size: 13px;
+}
+.month-selector span { font-weight: 600; font-size: 14px; min-width: 130px; text-align: center; }
+
+.divider { height: 1px; background: var(--border); margin: 20px 0; }
+
+.section-header {
+  display: flex; align-items: center; justify-content: space-between;
+  margin-bottom: 16px;
+}
+.section-header h2 {
+  font-family: var(--font-head); font-size: 14px;
+  font-weight: 600; color: var(--text2);
+  letter-spacing: .3px;
+}
+
+.icon-action {
+  background: none; border: none; cursor: pointer;
+  color: var(--text3); font-size: 14px; padding: 4px;
+  border-radius: 4px; transition: all .1s;
+}
+.icon-action:hover { color: var(--text); background: var(--bg4); }
+
+.search-bar {
+  display: flex; align-items: center; gap: 8px;
+  background: var(--bg2); border: 1px solid var(--border);
+  border-radius: var(--radius2); padding: 7px 12px;
+  margin-bottom: 16px;
+}
+.search-bar input {
+  background: none; border: none; padding: 0;
+  font-size: 13px; color: var(--text); flex: 1;
+  box-shadow: none;
+}
+.search-bar input:focus { box-shadow: none; }
+.search-bar span { color: var(--text3); }
+
+.mood-badge {
+  display: inline-block; font-size: 16px;
+  width: 28px; height: 28px; text-align: center; line-height: 28px;
+}
+
+/* ── ANIMATIONS ── */
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.animate-in { animation: fadeIn .2s ease forwards; }
+
+.color-inbox  { color: var(--inbox); }
+.color-task   { color: var(--task); }
+.color-savoir { color: var(--savoir); }
+.color-habit  { color: var(--habit); }
+.color-journal{ color: var(--journal); }
+
+/* ══ MOBILE / PWA OVERRIDES ══════════════════════════════ */
+@media (max-width: 768px) {
+  #app { flex-direction: column; }
+
+  /* Hide desktop sidebar */
+  #sidebar { display: none !important; }
+
+  /* Main takes full screen */
+  #main { height: 100vh; display: flex; flex-direction: column; }
+
+  /* Topbar mobile */
+  .topbar { padding: 10px 16px; padding-top: max(10px, env(safe-area-inset-top)); }
+  .topbar-title { font-size: 16px; }
+
+  /* Content scrollable */
+  .content {
+    padding: 14px 16px;
+    flex: 1;
+    overflow-y: auto;
+    padding-bottom: 80px; /* space for bottom nav */
+  }
+
+  /* Bottom nav */
+  #bottom-nav {
+    display: flex !important;
+    position: fixed; bottom: 0; left: 0; right: 0;
+    background: var(--bg1);
+    border-top: 1px solid var(--border);
+    padding: 6px 0;
+    padding-bottom: max(6px, env(safe-area-inset-bottom));
+    z-index: 50;
+  }
+  .bnav-item {
+    flex: 1; display: flex; flex-direction: column;
+    align-items: center; gap: 2px;
+    padding: 4px 2px;
+    cursor: pointer; border: none; background: none;
+    color: var(--text3); font-size: 10px;
+    font-family: var(--font); transition: color .15s;
+  }
+  .bnav-item.active { color: var(--accent); }
+  .bnav-item span:first-child { font-size: 20px; }
+
+  /* KPI grid 2 cols on mobile */
+  .kpi-grid { grid-template-columns: repeat(2, 1fr) !important; }
+  .kpi-value { font-size: 22px !important; }
+
+  /* Dash grid 1 col */
+  .dash-grid { grid-template-columns: 1fr !important; }
+
+  /* AI grid 1 col */
+  .ai-grid { grid-template-columns: 1fr !important; }
+
+  /* Savoir grid 1 col */
+  .savoir-grid { grid-template-columns: 1fr !important; }
+
+  /* Journal sections 1 col */
+  .journal-sections { grid-template-columns: 1fr !important; }
+
+  /* Forms full width */
+  .form-row.cols-2,
+  .form-row.cols-3,
+  .form-row.cols-4 { grid-template-columns: 1fr !important; }
+
+  /* Modal full screen on mobile */
+  .modal-overlay { align-items: flex-end; }
+  .modal {
+    width: 100% !important; max-width: 100% !important;
+    border-radius: 16px 16px 0 0 !important;
+    max-height: 92vh;
+    padding-bottom: max(20px, env(safe-area-inset-bottom));
+  }
+
+  /* Habit tracker scroll */
+  .habit-day-labels, .habit-row { min-width: 700px; }
+  .habit-name { width: 130px !important; min-width: 130px !important; }
+
+  /* Task actions always visible on mobile */
+  .task-actions { opacity: 1 !important; flex-wrap: wrap; }
+  .inbox-item-actions { opacity: 1 !important; }
+
+  /* Settings section */
+  .settings-section { padding: 16px; }
+  .key-input-row { flex-direction: column; }
+}
+
+/* Desktop: hide bottom nav */
+@media (min-width: 769px) {
+  #bottom-nav { display: none !important; }
+}
+
+/* PWA install banner */
+#install-banner {
+  display: none;
+  position: fixed; bottom: 70px; left: 12px; right: 12px;
+  background: var(--bg3); border: 1px solid var(--accent);
+  border-radius: var(--radius); padding: 12px 16px;
+  z-index: 60; box-shadow: var(--shadow);
+  flex-direction: column; gap: 8px;
+}
+#install-banner.show { display: flex; }
+#install-banner p { font-size: 13px; line-height: 1.4; }
+#install-banner .banner-actions { display: flex; gap: 8px; justify-content: flex-end; }
+
+
+/* ── AI PANEL ── */
+.ai-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 24px; }
+.ai-feature-card {
+  background: var(--bg2); border: 1px solid var(--border);
+  border-radius: var(--radius); padding: 18px;
+  cursor: pointer; transition: all .2s;
+  display: flex; flex-direction: column; gap: 8px;
+}
+.ai-feature-card:hover {
+  border-color: var(--accent); transform: translateY(-2px);
+  box-shadow: 0 4px 20px rgba(124,106,255,.15);
+}
+.ai-feature-icon { font-size: 24px; }
+.ai-feature-title { font-weight: 600; font-size: 14px; }
+.ai-feature-desc  { font-size: 12px; color: var(--text2); line-height: 1.5; }
+
+/* ── AI CHAT ── */
+.chat-container {
+  background: var(--bg2); border: 1px solid var(--border);
+  border-radius: var(--radius); overflow: hidden;
+}
+.chat-messages {
+  min-height: 200px; max-height: 380px;
+  overflow-y: auto; padding: 16px;
+  display: flex; flex-direction: column; gap: 10px;
+}
+.chat-msg {
+  max-width: 80%; padding: 10px 14px;
+  border-radius: 12px; font-size: 13px; line-height: 1.6;
+  white-space: pre-wrap;
+}
+.chat-msg.user {
+  align-self: flex-end;
+  background: var(--accent); color: #fff;
+  border-bottom-right-radius: 4px;
+}
+.chat-msg.ai {
+  align-self: flex-start;
+  background: var(--bg3); color: var(--text);
+  border-bottom-left-radius: 4px;
+}
+.chat-msg.ai.loading { color: var(--text3); font-style: italic; }
+.chat-input-row {
+  display: flex; gap: 8px; padding: 12px;
+  border-top: 1px solid var(--border);
+}
+.chat-input-row input { flex: 1; }
+
+/* ── AI INLINE BUTTON ── */
+.btn-ai {
+  background: linear-gradient(135deg, rgba(124,106,255,.2), rgba(199,125,255,.15));
+  border: 1px solid rgba(124,106,255,.4);
+  color: var(--accent2);
+  font-size: 11px; padding: 4px 10px;
+}
+.btn-ai:hover {
+  background: linear-gradient(135deg, rgba(124,106,255,.35), rgba(199,125,255,.25));
+  color: #fff;
+}
+
+/* ── AI RESULT BOX ── */
+.ai-result {
+  background: linear-gradient(135deg, rgba(124,106,255,.08), rgba(199,125,255,.05));
+  border: 1px solid rgba(124,106,255,.25);
+  border-radius: var(--radius2);
+  padding: 12px 14px; margin-top: 10px;
+  font-size: 12.5px; line-height: 1.6; color: var(--text2);
+  white-space: pre-wrap;
+}
+.ai-result-header {
+  font-size: 11px; font-weight: 600; color: var(--accent2);
+  margin-bottom: 6px; display: flex; align-items: center; gap: 6px;
+}
+
+/* ── SETTINGS ── */
+.settings-section {
+  background: var(--bg2); border: 1px solid var(--border);
+  border-radius: var(--radius); padding: 22px; margin-bottom: 16px;
+}
+.settings-section h3 {
+  font-family: var(--font-head); font-size: 14px; font-weight: 700;
+  margin-bottom: 14px; padding-bottom: 10px; border-bottom: 1px solid var(--border);
+}
+.key-input-row { display: flex; gap: 8px; align-items: flex-end; }
+.key-input-row input { flex: 1; font-family: monospace; letter-spacing: .5px; }
+
+@keyframes pulse {
+  0%,100% { opacity: 1; } 50% { opacity: .4; }
+}
+.ai-loading { animation: pulse 1.2s ease infinite; }
+</style>
+</head>
+<body>
+<div id="app">
+  <!-- SIDEBAR -->
+  <nav id="sidebar">
+    <div class="sidebar-logo">
+      <h1>🧠 2ème Cerveau</h1>
+      <p id="sidebar-date"></p>
+    </div>
+    <div class="sidebar-section">
+      <div class="sidebar-section-label">Navigation</div>
+      <div class="nav-item active" data-module="dashboard" onclick="navigate('dashboard')">
+        <span class="nav-icon">⚡</span> Dashboard
+      </div>
+      <div class="nav-item" data-module="inbox" onclick="navigate('inbox')">
+        <span class="nav-icon">📥</span> Inbox
+        <span class="nav-badge" id="badge-inbox">0</span>
+      </div>
+      <div class="nav-item" data-module="taches" onclick="navigate('taches')">
+        <span class="nav-icon">✅</span> Tâches
+        <span class="nav-badge" id="badge-taches">0</span>
+      </div>
+      <div class="nav-item" data-module="savoir" onclick="navigate('savoir')">
+        <span class="nav-icon">📚</span> Savoir
+        <span class="nav-badge" id="badge-savoir">0</span>
+      </div>
+      <div class="nav-item" data-module="habitudes" onclick="navigate('habitudes')">
+        <span class="nav-icon">🎯</span> Habitudes
+      </div>
+      <div class="nav-item" data-module="journal" onclick="navigate('journal')">
+        <span class="nav-icon">📅</span> Journal
+        <span class="nav-badge" id="badge-journal">0</span>
+      </div>
+      <div class="nav-item" data-module="ai" onclick="navigate('ai')">
+        <span class="nav-icon">✨</span> Assistant IA
+        <span class="nav-badge" id="badge-ai" style="background:rgba(124,106,255,.25);color:var(--accent)">Gemini</span>
+      </div>
+    </div>
+    <div class="sidebar-section" style="margin-top:auto;padding-top:8px;border-top:1px solid var(--border)">
+      <div class="nav-item" data-module="settings" onclick="navigate('settings')">
+        <span class="nav-icon">⚙️</span> Paramètres
+        <span id="key-status-icon" style="margin-left:auto;font-size:12px">🔑</span>
+      </div>
+    </div>
+    <div class="sidebar-status">
+      <div class="status-dot" id="status-dot"></div>
+      <span id="status-text">Connecté</span>
+    </div>
+  </nav>
+
+  <!-- MAIN -->
+  <div id="main">
+    <div class="topbar">
+      <div class="topbar-title" id="page-title">⚡ Dashboard</div>
+      <div class="topbar-actions" id="topbar-actions"></div>
+    </div>
+    <div class="content" id="content"></div>
+  </div>
+</div>
+
+<!-- MODAL -->
+<div class="modal-overlay" id="modal-overlay" onclick="closeModalOutside(event)">
+  <div class="modal" id="modal">
+    <div class="modal-header">
+      <h2 id="modal-title">Modal</h2>
+      <button class="btn btn-ghost btn-sm btn-icon" onclick="closeModal()">✕</button>
+    </div>
+    <div id="modal-body"></div>
+    <div class="modal-footer" id="modal-footer"></div>
+  </div>
+</div>
+
+<!-- TOAST -->
+<div id="toast"></div>
+
+<!-- BOTTOM NAV (mobile) -->
+<nav id="bottom-nav" style="display:none">
+  <button class="bnav-item active" data-module="dashboard" onclick="navigate('dashboard')">
+    <span>⚡</span><span>Dashboard</span>
+  </button>
+  <button class="bnav-item" data-module="inbox" onclick="navigate('inbox')">
+    <span>📥</span><span>Inbox</span>
+  </button>
+  <button class="bnav-item" data-module="taches" onclick="navigate('taches')">
+    <span>✅</span><span>Tâches</span>
+  </button>
+  <button class="bnav-item" data-module="savoir" onclick="navigate('savoir')">
+    <span>📚</span><span>Savoir</span>
+  </button>
+  <button class="bnav-item" data-module="more" onclick="openMoreMenu()">
+    <span>⋯</span><span>Plus</span>
+  </button>
+</nav>
+
+<!-- MORE MENU MODAL (mobile) -->
+<div id="more-menu" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:55" onclick="closeMoreMenu()">
+  <div style="position:absolute;bottom:0;left:0;right:0;background:var(--bg2);border-radius:16px 16px 0 0;padding:20px 16px 40px" onclick="event.stopPropagation()">
+    <div style="width:40px;height:4px;background:var(--border2);border-radius:2px;margin:0 auto 20px"></div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+      ${[['🎯','Habitudes','habitudes'],['📅','Journal','journal'],['✨','Assistant IA','ai'],['⚙️','Paramètres','settings']].map(([icon,label,mod])=>`
+      <button onclick="navigate('${mod}');closeMoreMenu()" style="background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius);padding:16px;display:flex;flex-direction:column;align-items:center;gap:6px;font-size:12px;color:var(--text);font-family:var(--font);cursor:pointer">
+        <span style="font-size:24px">${icon}</span>${label}
+      </button>`).join('')}
+    </div>
+  </div>
+</div>
+
+<!-- PWA INSTALL BANNER -->
+<div id="install-banner">
+  <p>📱 <strong>Installer l'application</strong><br>Ajoute cette app sur ton écran d'accueil pour l'utiliser comme une vraie app !</p>
+  <div class="banner-actions">
+    <button class="btn btn-ghost btn-sm" onclick="dismissInstall()">Plus tard</button>
+    <button class="btn btn-primary btn-sm" onclick="installPWA()">Installer</button>
+  </div>
+</div>
+
+<script>
+// ══════════════════════════════════════════════════════
+// STATE
+// ══════════════════════════════════════════════════════
+let currentModule = "dashboard";
+let taskFilter = "all";
+let habitMonth = new Date().getMonth();
+let habitYear  = new Date().getFullYear();
+let searchQuery = "";
+
+let DB = {
+  inbox:     [],
+  taches:    [],
+  savoir:    [],
+  habitudes: { objectifs: [], suivi: {} },
+  journal:   []
+};
+
+let GEMINI_KEY = '';
+const GEMINI_MODEL = 'gemini-2.5-flash';
+const GEMINI_URL = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent`;
+
+// ══════════════════════════════════════════════════════
+// UTILS
+// ══════════════════════════════════════════════════════
+const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2,6);
+const today = () => new Date().toISOString().slice(0,10);
+const fmtDate = d => d ? new Date(d + 'T12:00:00').toLocaleDateString('fr-BE',{day:'2-digit',month:'short',year:'numeric'}) : '';
+const fmtDateShort = d => d ? new Date(d + 'T12:00:00').toLocaleDateString('fr-BE',{day:'2-digit',month:'2-digit'}) : '';
+const esc = s => String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+
+function toast(msg, ok=true) {
+  const t = document.getElementById('toast');
+  t.textContent = (ok ? '✓  ' : '⚠  ') + msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2400);
+}
+
+// ══════════════════════════════════════════════════════
+// INDEXEDDB STORAGE
+// ══════════════════════════════════════════════════════
+let idb = null;
+
+function openIDB() {
+  return new Promise((resolve, reject) => {
+    const req = indexedDB.open('cerveau_db', 1);
+    req.onupgradeneeded = e => {
+      const db = e.target.result;
+      if (!db.objectStoreNames.contains('data'))   db.createObjectStore('data');
+      if (!db.objectStoreNames.contains('config')) db.createObjectStore('config');
+    };
+    req.onsuccess = e => { idb = e.target.result; resolve(idb); };
+    req.onerror   = () => reject(req.error);
+  });
+}
+
+function idbGet(store, key) {
+  return new Promise((resolve, reject) => {
+    const tx  = idb.transaction(store, 'readonly');
+    const req = tx.objectStore(store).get(key);
+    req.onsuccess = () => resolve(req.result);
+    req.onerror   = () => reject(req.error);
+  });
+}
+
+function idbSet(store, key, value) {
+  return new Promise((resolve, reject) => {
+    const tx  = idb.transaction(store, 'readwrite');
+    const req = tx.objectStore(store).put(value, key);
+    req.onsuccess = () => resolve();
+    req.onerror   = () => reject(req.error);
+  });
+}
+
+async function loadData() {
+  try {
+    await openIDB();
+    const saved = await idbGet('data', 'main');
+    if (saved) {
+      for (const k of Object.keys(DB)) {
+        if (saved[k] !== undefined) DB[k] = saved[k];
+      }
+    }
+    const key = await idbGet('config', 'gemini_key');
+    if (key) GEMINI_KEY = key;
+    updateKeyStatus();
+    setStatus(true);
+  } catch(e) {
+    console.error('IDB error:', e);
+    setStatus(false);
+  }
+  updateBadges();
+}
+
+async function saveModule(module) {
+  try {
+    const saved = await idbGet('data', 'main') || {};
+    saved[module] = DB[module];
+    await idbSet('data', 'main', saved);
+    setStatus(true);
+  } catch(e) {
+    setStatus(false);
+    toast('Erreur de sauvegarde', false);
+  }
+}
+
+async function saveGeminiKey(key) {
+  GEMINI_KEY = key;
+  await idbSet('config', 'gemini_key', key);
+  updateKeyStatus();
+}
+
+function updateKeyStatus() {
+  const icon = document.getElementById('key-status-icon');
+  if (icon) icon.textContent = GEMINI_KEY ? '✅' : '🔑';
+}
+
+// ══════════════════════════════════════════════════════
+// GEMINI DIRECT CALL
+// ══════════════════════════════════════════════════════
+async function callGemini(prompt, system='') {
+  if (!GEMINI_KEY) throw new Error('Configure ta clé API Gemini dans ⚙️ Paramètres');
+  const contents = [];
+  if (system) {
+    contents.push({role:'user',  parts:[{text: system}]});
+    contents.push({role:'model', parts:[{text: 'Compris.'}]});
+  }
+  contents.push({role:'user', parts:[{text: prompt}]});
+
+  const r = await fetch(`${GEMINI_URL}?key=${GEMINI_KEY}`, {
+    method: 'POST',
+    headers: {'Content-Type':'application/json'},
+    body: JSON.stringify({contents, generationConfig:{temperature:0.7, maxOutputTokens:1024}})
+  });
+  if (!r.ok) {
+    const err = await r.json();
+    throw new Error(err?.error?.message || `HTTP ${r.status}`);
+  }
+  const data = await r.json();
+  return data.candidates[0].content.parts[0].text.trim();
+}
+
+const SYSTEM_BASE = `Tu es un assistant personnel intégré dans un outil de productivité "2ème cerveau".
+Tu réponds toujours en français, de manière concise et structurée.
+Tu ne génères que ce qui est demandé, sans introduction inutile.`;
+
+async function aiCall(action, payload) {
+  const SYSTEM = SYSTEM_BASE;
+  let raw = '';
+  if (action === 'categorize') {
+    raw = await callGemini(
+      `Analyse cette note et réponds UNIQUEMENT en JSON valide (sans markdown ni backticks) :
+{"categorie":"(Idée|Projet|Ressource|Action|Réflexion|Autre)","priorite":"(⭐⭐⭐ Haute|⭐⭐ Moyenne|⭐ Basse)","destination":"(Tâches|Savoir|Habitudes|Journal|Archiver)","resume":"1 phrase max"}
+Note: "${payload.texte}"`, SYSTEM);
+    raw = raw.replace(/```json|```/g,'').trim();
+    return { result: JSON.parse(raw) };
+  }
+  if (action === 'decompose') {
+    raw = await callGemini(
+      `Décompose cette tâche en sous-tâches. Réponds UNIQUEMENT avec un tableau JSON de strings (sans markdown), max 6.
+Tâche: "${payload.titre}" | Contexte: "${payload.notes||'aucun'}"`, SYSTEM);
+    raw = raw.replace(/```json|```/g,'').trim();
+    return { result: JSON.parse(raw) };
+  }
+  if (action === 'summarize') {
+    raw = await callGemini(
+      `Résume cette ressource. Réponds UNIQUEMENT en JSON (sans markdown) :
+{"resume":"2-3 phrases","points_cles":["p1","p2","p3"],"type":"(Livre|Article|Vidéo|Podcast|Cours|Outil|Autre)"}
+Titre: "${payload.titre}" | Source: "${payload.source||'non précisée'}"`, SYSTEM);
+    raw = raw.replace(/```json|```/g,'').trim();
+    return { result: JSON.parse(raw) };
+  }
+  if (action === 'journal_prompt') {
+    const result = await callGemini(
+      `Entrée: "${payload.contenu}" | Humeur: ${payload.humeur||'non précisée'}
+Génère UNE question de réflexion profonde et bienveillante (max 2 lignes).`, SYSTEM);
+    return { result };
+  }
+  if (action === 'weekly_review') {
+    const nb_todo = DB.taches.filter(t=>['À faire','En cours'].includes(t.statut)).length;
+    const nb_done = DB.taches.filter(t=>t.statut==='✅ Fait').length;
+    const result  = await callGemini(
+      `Bilan 2ème cerveau: Inbox:${DB.inbox.length} | Tâches actives:${nb_todo} | Complétées:${nb_done} | Savoir:${DB.savoir.length} | Journal:${DB.journal.length} | Habitudes:${DB.habitudes.objectifs.length}
+Génère un bilan en 3 parties (emoji+titre+2 lignes max): 1.🌟 Points positifs  2.🎯 Priorité  3.💡 Conseil`, SYSTEM);
+    return { result };
+  }
+  if (action === 'chat') {
+    const nb_todo = DB.taches.filter(t=>['À faire','En cours'].includes(t.statut)).length;
+    const tasks   = DB.taches.slice(-5).map(t=>t.titre);
+    const system  = `${SYSTEM}\nContexte: ${DB.inbox.length} idées inbox, ${nb_todo} tâches actives. Dernières tâches: ${tasks}.`;
+    const result  = await callGemini(payload.message, system);
+    return { result };
+  }
+  throw new Error('Action inconnue: ' + action);
+}
+
+
+function setStatus(ok) {
+  const dot  = document.getElementById('status-dot');
+  const text = document.getElementById('status-text');
+  if (dot)  { dot.style.background = ok ? 'var(--task)' : 'var(--danger)'; dot.style.boxShadow = ok ? '0 0 6px var(--task)' : '0 0 6px var(--danger)'; }
+  if (text) text.textContent = ok ? 'Données sauvegardées' : 'Erreur stockage';
+}
+
+// ══════════════════════════════════════════════════════
+// NAVIGATION
+// ══════════════════════════════════════════════════════
+function navigate(module) {
+  currentModule = module;
+  // Desktop sidebar
+  document.querySelectorAll('.nav-item').forEach(el => {
+    el.classList.toggle('active', el.dataset.module === module);
+  });
+  // Mobile bottom nav
+  document.querySelectorAll('.bnav-item').forEach(el => {
+    el.classList.toggle('active', el.dataset.module === module);
+  });
+  searchQuery = '';
+  render();
+}
+
+function updateBadges() {
+  document.getElementById('badge-inbox').textContent  = DB.inbox.length;
+  document.getElementById('badge-taches').textContent = DB.taches.filter(t=>t.statut==='À faire'||t.statut==='En cours').length;
+  document.getElementById('badge-savoir').textContent = DB.savoir.length;
+  document.getElementById('badge-journal').textContent = DB.journal.length;
+}
+
+// ══════════════════════════════════════════════════════
+// RENDER ROUTER
+// ══════════════════════════════════════════════════════
+function render() {
+  const titles = {
+    dashboard: '⚡ Dashboard',
+    inbox:     '📥 Inbox',
+    taches:    '✅ Tâches & Projets',
+    savoir:    '📚 Base de Savoir',
+    habitudes: '🎯 Habitudes du mois',
+    journal:   '📅 Journal',
+    ai:        '✨ Assistant IA',
+    settings:  '⚙️ Paramètres'
+  };
+  document.getElementById('page-title').textContent = titles[currentModule] || '';
+  updateBadges();
+
+  const actions = document.getElementById('topbar-actions');
+  actions.innerHTML = '';
+
+  switch(currentModule) {
+    case 'dashboard':  renderDashboard();  break;
+    case 'inbox':      renderInbox(actions); break;
+    case 'taches':     renderTaches(actions); break;
+    case 'savoir':     renderSavoir(actions); break;
+    case 'habitudes':  renderHabitudes(actions); break;
+    case 'journal':    renderJournal(actions); break;
+    case 'ai':         renderAI(actions); break;
+    case 'settings':   renderSettings(actions); break;
+  }
+}
+
+// ══════════════════════════════════════════════════════
+// DASHBOARD
+// ══════════════════════════════════════════════════════
+function renderDashboard() {
+  const todo  = DB.taches.filter(t=>t.statut==='À faire').length;
+  const doing = DB.taches.filter(t=>t.statut==='En cours').length;
+  const todayEntries = DB.journal.filter(j=>j.date===today());
+  const thisMonth = `${habitYear}-${String(habitMonth+1).padStart(2,'0')}`;
+  const habOk = DB.habitudes.objectifs.length;
+
+  // recent inbox
+  const recentInbox = [...DB.inbox].slice(-5).reverse();
+  // urgent tasks
+  const urgentTasks = DB.taches.filter(t=>t.statut!=='✅ Fait'&&t.statut!=='❌ Annulé')
+    .sort((a,b)=> (a.echeance||'9999') > (b.echeance||'9999') ? 1 : -1).slice(0,6);
+
+  document.getElementById('content').innerHTML = `
+  <div class="animate-in">
+    <div class="kpi-grid">
+      ${kpiCard('inbox',  '📥', DB.inbox.length, 'idées en inbox')}
+      ${kpiCard('taches', '✅', todo + doing, 'tâches actives')}
+      ${kpiCard('savoir', '📚', DB.savoir.length, 'ressources')}
+      ${kpiCard('habitudes','🎯', habOk, 'habitudes suivies')}
+      ${kpiCard('journal', '📅', DB.journal.length, 'entrées journal')}
+    </div>
+
+    <div class="dash-grid">
+      <div>
+        <div class="dash-section">
+          <h3>🔥 Tâches prioritaires</h3>
+          ${urgentTasks.length === 0
+            ? '<p style="color:var(--text3);font-size:13px">Aucune tâche active 🎉</p>'
+            : urgentTasks.map(t => `
+              <div class="task-item" style="margin-bottom:6px">
+                <div class="task-check ${t.statut==='✅ Fait'?'checked':''}" onclick="toggleTaskDone('${t.id}')">
+                  ${t.statut==='✅ Fait'?'✓':''}
+                </div>
+                <div class="task-content">
+                  <div class="task-title">${esc(t.titre)}</div>
+                  <div class="task-meta">
+                    ${t.projet?`<span class="tag">${esc(t.projet)}</span>`:''}
+                    ${t.echeance?`<span style="font-size:11px;color:${isOverdue(t.echeance)?'var(--danger)':'var(--text3)'}">${fmtDateShort(t.echeance)}</span>`:''}
+                    ${statusPill(t.statut)}
+                  </div>
+                </div>
+              </div>`).join('')}
+        </div>
+
+        <div class="divider"></div>
+
+        <div class="dash-section">
+          <h3>💡 Dernières captures</h3>
+          ${recentInbox.length === 0
+            ? '<p style="color:var(--text3);font-size:13px">Inbox vide — écris tes idées !</p>'
+            : recentInbox.map(i => `
+              <div style="padding:8px 0; border-bottom:1px solid var(--border); font-size:13px;">
+                <span style="color:var(--text)">${esc(i.texte.slice(0,80))}${i.texte.length>80?'…':''}</span>
+                <span style="color:var(--text3);font-size:11px;margin-left:8px">${fmtDateShort(i.date)}</span>
+              </div>`).join('')}
+        </div>
+      </div>
+
+      <div>
+        <div class="dash-section">
+          <h3>📊 Statut des tâches</h3>
+          ${statBar(DB.taches)}
+        </div>
+
+        <div class="divider"></div>
+
+        <div class="dash-section">
+          <h3>📅 Journal d'aujourd'hui</h3>
+          ${todayEntries.length > 0
+            ? todayEntries.map(j => `
+                <div style="font-size:13px;line-height:1.6">
+                  <span style="font-size:18px">${j.humeur||''}</span>
+                  <p style="margin-top:6px;color:var(--text2)">${esc((j.contenu||'').slice(0,150))}${(j.contenu||'').length>150?'…':''}</p>
+                </div>`).join('')
+            : `<p style="color:var(--text3);font-size:13px">Pas encore d'entrée aujourd'hui.</p>
+               <button class="btn btn-ghost btn-sm" style="margin-top:8px" onclick="navigate('journal');openJournalModal()">
+                 + Écrire maintenant
+               </button>`}
+        </div>
+
+        <div class="divider"></div>
+
+        <div class="dash-section">
+          <h3>📚 Dernières ressources</h3>
+          ${DB.savoir.slice(-3).reverse().map(s=>`
+            <div style="padding:8px 0;border-bottom:1px solid var(--border)">
+              <div style="font-size:13px;font-weight:500">${esc(s.titre)}</div>
+              <div style="font-size:11px;color:var(--text3)">${esc(s.type||'')} ${s.note?'· '+'⭐'.repeat(parseInt(s.note)):''}</div>
+            </div>`).join('') || '<p style="color:var(--text3);font-size:13px">Aucune ressource.</p>'}
+        </div>
+      </div>
+    </div>
+  </div>`;
+
+  // KPI click nav
+  document.querySelectorAll('.kpi-card').forEach(c => {
+    c.addEventListener('click', () => navigate(c.dataset.nav));
+  });
+}
+
+function kpiCard(mod, icon, val, label) {
+  return `<div class="kpi-card ${mod}" data-nav="${mod}">
+    <div class="kpi-icon">${icon}</div>
+    <div class="kpi-value">${val}</div>
+    <div class="kpi-label">${label}</div>
+  </div>`;
+}
+
+function statBar(tasks) {
+  const map = {'À faire':0,'En cours':0,'En attente':0,'✅ Fait':0,'❌ Annulé':0};
+  tasks.forEach(t => { if(map[t.statut]!==undefined) map[t.statut]++; });
+  const total = tasks.length || 1;
+  return `<div style="display:flex;flex-direction:column;gap:6px;margin-top:4px">
+    ${Object.entries(map).map(([k,v]) => `
+      <div style="display:flex;align-items:center;gap:8px;font-size:12px">
+        <span style="width:80px;color:var(--text2)">${k}</span>
+        <div style="flex:1;height:6px;background:var(--bg4);border-radius:3px;overflow:hidden">
+          <div style="height:100%;width:${Math.round(v/total*100)}%;background:var(--accent);border-radius:3px;transition:width .3s"></div>
+        </div>
+        <span style="width:20px;text-align:right;color:var(--text3)">${v}</span>
+      </div>`).join('')}
+  </div>`;
+}
+
+function isOverdue(d) { return d && d < today(); }
+
+// ══════════════════════════════════════════════════════
+// INBOX
+// ══════════════════════════════════════════════════════
+function renderInbox(actions) {
+  const addBtn = document.createElement('button');
+  addBtn.className = 'btn btn-primary btn-sm';
+  addBtn.innerHTML = '+ Ajouter';
+  addBtn.onclick = openInboxModal;
+  actions.appendChild(addBtn);
+
+  const filtered = searchQuery
+    ? DB.inbox.filter(i => i.texte.toLowerCase().includes(searchQuery.toLowerCase()))
+    : DB.inbox;
+
+  document.getElementById('content').innerHTML = `
+  <div class="animate-in">
+    <div class="inbox-quick">
+      <textarea id="quick-input" placeholder="Capture rapide — écris une idée…" onkeydown="quickCapture(event)"></textarea>
+      <button class="btn btn-primary" onclick="doQuickCapture()">Capturer</button>
+    </div>
+
+    <div class="search-bar">
+      <span>🔍</span>
+      <input type="text" placeholder="Rechercher dans l'inbox…" value="${esc(searchQuery)}"
+        oninput="searchQuery=this.value;renderInbox(document.getElementById('topbar-actions'))">
+    </div>
+
+    <div class="section-header">
+      <h2>${filtered.length} entrée${filtered.length>1?'s':''}</h2>
+    </div>
+
+    ${filtered.length === 0
+      ? `<div class="empty"><div class="empty-icon">📥</div><h3>Inbox vide</h3><p>Capture tes idées en un instant.</p></div>`
+      : [...filtered].reverse().map(item => `
+        <div class="inbox-item animate-in">
+          <div class="inbox-item-content">
+            <div class="inbox-item-text">${esc(item.texte)}</div>
+            <div class="inbox-item-meta">
+              <span style="font-size:11px;color:var(--text3)">${fmtDate(item.date)}</span>
+              ${item.categorie?`<span class="tag inbox">${esc(item.categorie)}</span>`:''}
+              ${item.priorite?`<span class="tag" style="font-size:10px">${esc(item.priorite)}</span>`:''}
+              ${item.destination?`<span class="tag"style="font-size:10px">→ ${esc(item.destination)}</span>`:''}
+            </div>
+          </div>
+          <div class="inbox-item-actions">
+            <button class="btn btn-ai btn-sm" id="ai-btn-${item.id}" onclick="aiCategorizeInbox(DB.inbox.find(x=>x.id==='${item.id}'))">✨ IA</button>
+            <button class="icon-action" onclick="editInboxItem('${item.id}')" title="Modifier">✏️</button>
+            <button class="icon-action" onclick="deleteItem('inbox','${item.id}')" title="Supprimer">🗑️</button>
+          </div>
+        </div>`).join('')}
+  </div>`;
+}
+
+function quickCapture(e) {
+  if(e.key==='Enter' && !e.shiftKey) { e.preventDefault(); doQuickCapture(); }
+}
+
+function doQuickCapture() {
+  const txt = document.getElementById('quick-input').value.trim();
+  if(!txt) return;
+  DB.inbox.push({ id: uid(), texte: txt, date: today(), categorie:'', priorite:'', destination:'' });
+  saveModule('inbox');
+  updateBadges();
+  renderInbox(document.getElementById('topbar-actions'));
+  toast('Idée capturée !');
+}
+
+function openInboxModal(item=null) {
+  const isEdit = !!item;
+  openModal(isEdit ? '✏️ Modifier' : '📥 Nouvelle entrée',
+    `<div class="form-row"><div class="form-group">
+      <label>Idée / Note *</label>
+      <textarea id="f-texte" rows="4">${esc(item?.texte||'')}</textarea>
+    </div></div>
+    <div class="form-row cols-2">
+      <div class="form-group"><label>Catégorie</label>
+        <select id="f-cat">
+          ${['','Idée','Projet','Ressource','Action','Réflexion','Autre'].map(c=>`<option ${item?.categorie===c?'selected':''}>${c}</option>`).join('')}
+        </select></div>
+      <div class="form-group"><label>Priorité</label>
+        <select id="f-prio">
+          ${['','⭐⭐⭐ Haute','⭐⭐ Moyenne','⭐ Basse'].map(p=>`<option ${item?.priorite===p?'selected':''}>${p}</option>`).join('')}
+        </select></div>
+    </div>
+    <div class="form-row"><div class="form-group"><label>Destination</label>
+      <select id="f-dest">
+        ${['','Tâches','Savoir','Habitudes','Journal','Archiver'].map(d=>`<option ${item?.destination===d?'selected':''}>${d}</option>`).join('')}
+      </select></div></div>`,
+    [{ label: isEdit ? 'Enregistrer' : 'Capturer', primary: true, action: () => {
+      const t = document.getElementById('f-texte').value.trim();
+      if(!t) return;
+      if(isEdit) {
+        item.texte=t; item.categorie=document.getElementById('f-cat').value;
+        item.priorite=document.getElementById('f-prio').value;
+        item.destination=document.getElementById('f-dest').value;
+      } else {
+        DB.inbox.push({ id:uid(), texte:t, date:today(),
+          categorie:document.getElementById('f-cat').value,
+          priorite:document.getElementById('f-prio').value,
+          destination:document.getElementById('f-dest').value });
+      }
+      saveModule('inbox'); closeModal(); renderInbox(document.getElementById('topbar-actions'));
+      toast(isEdit?'Modifié !':'Capturé !');
+    }}]
+  );
+}
+function editInboxItem(id) { openInboxModal(DB.inbox.find(i=>i.id===id)); }
+
+// ══════════════════════════════════════════════════════
+// TÂCHES
+// ══════════════════════════════════════════════════════
+function renderTaches(actions) {
+  const addBtn = document.createElement('button');
+  addBtn.className = 'btn btn-primary btn-sm';
+  addBtn.innerHTML = '+ Nouvelle tâche';
+  addBtn.onclick = () => openTacheModal();
+  actions.appendChild(addBtn);
+
+  const filters = ['all','À faire','En cours','En attente','✅ Fait','❌ Annulé'];
+  let tasks = taskFilter==='all' ? DB.taches : DB.taches.filter(t=>t.statut===taskFilter);
+  if(searchQuery) tasks = tasks.filter(t=>t.titre.toLowerCase().includes(searchQuery.toLowerCase())||
+    (t.projet||'').toLowerCase().includes(searchQuery.toLowerCase()));
+
+  document.getElementById('content').innerHTML = `
+  <div class="animate-in">
+    <div class="search-bar">
+      <span>🔍</span>
+      <input type="text" placeholder="Rechercher tâches, projets…" value="${esc(searchQuery)}"
+        oninput="searchQuery=this.value;renderTaches(document.getElementById('topbar-actions'))">
+    </div>
+    <div class="task-filters">
+      ${filters.map(f=>`
+        <button class="filter-btn${taskFilter===f?' active':''}" onclick="taskFilter='${f}';renderTaches(document.getElementById('topbar-actions'))">
+          ${f==='all'?'Toutes ('+DB.taches.length+')':f}
+        </button>`).join('')}
+    </div>
+    ${tasks.length===0
+      ? `<div class="empty"><div class="empty-icon">✅</div><h3>Aucune tâche ici</h3><p>Tout est clean !</p></div>`
+      : tasks.map(t => `
+        <div class="task-item${t.statut==='✅ Fait'?' done':''} animate-in">
+          <div class="task-check ${t.statut==='✅ Fait'?'checked':''}" onclick="toggleTaskDone('${t.id}')">
+            ${t.statut==='✅ Fait'?'<span style="color:#fff;font-size:11px">✓</span>':''}
+          </div>
+          <div class="task-content">
+            <div class="task-title">${esc(t.titre)}</div>
+            <div class="task-meta">
+              ${t.projet?`<span class="tag">${esc(t.projet)}</span>`:''}
+              ${t.echeance?`<span style="font-size:11px;color:${isOverdue(t.echeance)&&t.statut!=='✅ Fait'?'var(--danger)':'var(--text3)'}">📅 ${fmtDateShort(t.echeance)}</span>`:''}
+              ${statusPill(t.statut)}
+              ${t.priorite?`<span class="tag" style="font-size:10px">${esc(t.priorite)}</span>`:''}
+              ${t.contexte?`<span class="tag" style="font-size:10px">${esc(t.contexte)}</span>`:''}
+            </div>
+          </div>
+          <div class="task-actions">
+            <button class="btn btn-ai btn-sm" onclick="aiDecomposeTask(DB.taches.find(x=>x.id==='${t.id}'));this.closest('.task-item').querySelector('.ai-decompose-area').style.display='block'">✨ Décomposer</button>
+            <select class="btn btn-ghost btn-sm" style="padding:3px 6px;font-size:11px;width:auto"
+              onchange="changeTaskStatus('${t.id}',this.value)">
+              ${['À faire','En cours','En attente','✅ Fait','❌ Annulé'].map(s=>`<option${t.statut===s?' selected':''}>${s}</option>`).join('')}
+            </select>
+            <button class="icon-action" onclick="editTache('${t.id}')">✏️</button>
+            <button class="icon-action" onclick="deleteItem('taches','${t.id}')">🗑️</button>
+          </div>
+        </div>
+        <div class="ai-decompose-area" id="ai-decompose-${t.id}" style="display:none;padding:0 12px 12px 52px"></div>
+        </div>`).join('')}
+  </div>`;
+}
+
+function statusPill(s) {
+  const map = {'À faire':'pill-todo','En cours':'pill-doing','En attente':'pill-wait','✅ Fait':'pill-done','❌ Annulé':'pill-cancel'};
+  return `<span class="pill ${map[s]||'pill-todo'}">${s}</span>`;
+}
+
+function toggleTaskDone(id) {
+  const t = DB.taches.find(x=>x.id===id);
+  if(!t) return;
+  t.statut = t.statut==='✅ Fait' ? 'À faire' : '✅ Fait';
+  saveModule('taches'); renderTaches(document.getElementById('topbar-actions'));
+}
+
+function changeTaskStatus(id, val) {
+  const t = DB.taches.find(x=>x.id===id);
+  if(t) { t.statut=val; saveModule('taches'); renderTaches(document.getElementById('topbar-actions')); }
+}
+
+function openTacheModal(task=null) {
+  const isEdit = !!task;
+  openModal(isEdit?'✏️ Modifier la tâche':'✅ Nouvelle tâche',
+    `<div class="form-row"><div class="form-group">
+      <label>Tâche *</label>
+      <input type="text" id="f-titre" value="${esc(task?.titre||'')}" placeholder="Que dois-tu faire ?">
+    </div></div>
+    <div class="form-row cols-2">
+      <div class="form-group"><label>Projet</label>
+        <input type="text" id="f-projet" value="${esc(task?.projet||'')}" placeholder="Nom du projet…"></div>
+      <div class="form-group"><label>Échéance</label>
+        <input type="date" id="f-ech" value="${task?.echeance||''}"></div>
+    </div>
+    <div class="form-row cols-3">
+      <div class="form-group"><label>Statut</label>
+        <select id="f-statut">${['À faire','En cours','En attente','✅ Fait','❌ Annulé'].map(s=>`<option ${task?.statut===s?'selected':''}>${s}</option>`).join('')}</select></div>
+      <div class="form-group"><label>Priorité</label>
+        <select id="f-prio2">${['','🔴 Critique','🟠 Haute','🟡 Normale','🟢 Basse'].map(p=>`<option ${task?.priorite===p?'selected':''}>${p}</option>`).join('')}</select></div>
+      <div class="form-group"><label>Contexte</label>
+        <select id="f-ctx">${['','@Bureau','@Maison','@Téléphone','@Online','@Réunion'].map(c=>`<option ${task?.contexte===c?'selected':''}>${c}</option>`).join('')}</select></div>
+    </div>
+    <div class="form-row"><div class="form-group"><label>Notes</label>
+      <textarea id="f-notes" rows="3">${esc(task?.notes||'')}</textarea></div></div>`,
+    [{ label: isEdit?'Enregistrer':'Créer', primary:true, action: () => {
+      const titre = document.getElementById('f-titre').value.trim();
+      if(!titre) return;
+      const obj = { titre, projet:document.getElementById('f-projet').value,
+        echeance:document.getElementById('f-ech').value,
+        statut:document.getElementById('f-statut').value,
+        priorite:document.getElementById('f-prio2').value,
+        contexte:document.getElementById('f-ctx').value,
+        notes:document.getElementById('f-notes').value };
+      if(isEdit) Object.assign(task, obj);
+      else DB.taches.push({ id:uid(), ...obj });
+      saveModule('taches'); closeModal(); renderTaches(document.getElementById('topbar-actions'));
+      toast(isEdit?'Tâche modifiée !':'Tâche créée !');
+    }}]
+  );
+}
+function editTache(id) { openTacheModal(DB.taches.find(t=>t.id===id)); }
+
+// ══════════════════════════════════════════════════════
+// SAVOIR
+// ══════════════════════════════════════════════════════
+function renderSavoir(actions) {
+  const addBtn = document.createElement('button');
+  addBtn.className = 'btn btn-primary btn-sm';
+  addBtn.innerHTML = '+ Ajouter';
+  addBtn.onclick = () => openSavoirModal();
+  actions.appendChild(addBtn);
+
+  let items = searchQuery
+    ? DB.savoir.filter(s=>(s.titre+s.theme+s.type+s.resume).toLowerCase().includes(searchQuery.toLowerCase()))
+    : DB.savoir;
+
+  document.getElementById('content').innerHTML = `
+  <div class="animate-in">
+    <div class="search-bar">
+      <span>🔍</span>
+      <input type="text" placeholder="Rechercher titre, thème, type…" value="${esc(searchQuery)}"
+        oninput="searchQuery=this.value;renderSavoir(document.getElementById('topbar-actions'))">
+    </div>
+    <div class="section-header">
+      <h2>${items.length} ressource${items.length>1?'s':''}</h2>
+    </div>
+    ${items.length===0
+      ? `<div class="empty"><div class="empty-icon">📚</div><h3>Aucune ressource</h3><p>Commence à capturer ton savoir !</p></div>`
+      : `<div class="savoir-grid">${[...items].reverse().map(s=>`
+          <div class="savoir-card animate-in">
+            <div class="savoir-meta">
+              ${s.type?`<span class="tag savoir">${esc(s.type)}</span>`:''}
+              ${s.theme?`<span class="tag">${esc(s.theme)}</span>`:''}
+              <span style="margin-left:auto;display:flex;gap:4px">
+                <button class="icon-action" onclick="editSavoir('${s.id}')">✏️</button>
+                <button class="icon-action" onclick="deleteItem('savoir','${s.id}')">🗑️</button>
+              </span>
+            </div>
+            <div class="savoir-title">${esc(s.titre)}</div>
+            ${s.note?`<div class="stars">${'⭐'.repeat(parseInt(s.note))} <span style="font-size:11px;color:var(--text3)">${s.note}/5</span></div>`:''}
+            ${s.source?`<a href="${esc(s.source)}" target="_blank" style="font-size:11px;color:var(--savoir);text-decoration:none;word-break:break-all">🔗 ${esc(s.source.replace(/^https?:\/\//,'').slice(0,50))}</a>`:''}
+            ${s.resume?`<div class="savoir-resume">${esc(s.resume)}</div>`:''}
+            <div id="ai-savoir-${s.id}"></div>
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-top:4px">
+              <span style="font-size:11px;color:var(--text3)">${fmtDate(s.date)}</span>
+              <button class="btn btn-ai btn-sm" onclick="aiSummarizeResource(DB.savoir.find(x=>x.id==='${s.id}'));document.getElementById('ai-savoir-${s.id}').style.display='block'">✨ Résumer</button>
+            </div>
+          </div>`).join('')}</div>`}
+  </div>`;
+}
+
+function openSavoirModal(item=null) {
+  const isEdit = !!item;
+  openModal(isEdit?'✏️ Modifier':'📚 Nouvelle ressource',
+    `<div class="form-row"><div class="form-group">
+      <label>Titre *</label>
+      <input type="text" id="f-titre" value="${esc(item?.titre||'')}" placeholder="Titre du livre, article…">
+    </div></div>
+    <div class="form-row cols-2">
+      <div class="form-group"><label>Type</label>
+        <select id="f-type">${['','Livre','Article','Vidéo','Podcast','Cours','Outil','Autre'].map(t=>`<option ${item?.type===t?'selected':''}>${t}</option>`).join('')}</select></div>
+      <div class="form-group"><label>Thème</label>
+        <select id="f-theme">${['','Tech','Management','Santé','Finance','Créativité','Personnel','Autre'].map(t=>`<option ${item?.theme===t?'selected':''}>${t}</option>`).join('')}</select></div>
+    </div>
+    <div class="form-row cols-2">
+      <div class="form-group"><label>Source / URL</label>
+        <input type="url" id="f-source" value="${esc(item?.source||'')}" placeholder="https://…"></div>
+      <div class="form-group"><label>Note (1-5)</label>
+        <select id="f-note">${['','1','2','3','4','5'].map(n=>`<option ${item?.note===n?'selected':''}>${n}</option>`).join('')}</select></div>
+    </div>
+    <div class="form-row"><div class="form-group"><label>Résumé / Leçon clé</label>
+      <textarea id="f-resume" rows="4">${esc(item?.resume||'')}</textarea></div></div>`,
+    [{ label: isEdit?'Enregistrer':'Ajouter', primary:true, action: () => {
+      const titre = document.getElementById('f-titre').value.trim();
+      if(!titre) return;
+      const obj = { titre, type:document.getElementById('f-type').value,
+        theme:document.getElementById('f-theme').value,
+        source:document.getElementById('f-source').value,
+        note:document.getElementById('f-note').value,
+        resume:document.getElementById('f-resume').value,
+        date: item?.date||today() };
+      if(isEdit) Object.assign(item, obj);
+      else DB.savoir.push({ id:uid(), ...obj });
+      saveModule('savoir'); closeModal(); renderSavoir(document.getElementById('topbar-actions'));
+      toast(isEdit?'Modifié !':'Ressource ajoutée !');
+    }}]
+  );
+}
+function editSavoir(id) { openSavoirModal(DB.savoir.find(s=>s.id===id)); }
+
+// ══════════════════════════════════════════════════════
+// HABITUDES
+// ══════════════════════════════════════════════════════
+function renderHabitudes(actions) {
+  const addBtn = document.createElement('button');
+  addBtn.className = 'btn btn-primary btn-sm';
+  addBtn.innerHTML = '+ Habitude';
+  addBtn.onclick = openHabitModal;
+  actions.appendChild(addBtn);
+
+  const daysInMonth = new Date(habitYear, habitMonth+1, 0).getDate();
+  const todayD = new Date();
+  const monthKey = `${habitYear}-${String(habitMonth+1).padStart(2,'0')}`;
+  const objs = DB.habitudes.objectifs || [];
+  const suivi = DB.habitudes.suivi || {};
+
+  const moisFR = ['Janvier','Février','Mars','Avril','Mai','Juin',
+                  'Juillet','Août','Septembre','Octobre','Novembre','Décembre'];
+
+  document.getElementById('content').innerHTML = `
+  <div class="animate-in">
+    <div class="month-selector">
+      <button onclick="habitMonth--;if(habitMonth<0){habitMonth=11;habitYear--;}renderHabitudes(document.getElementById('topbar-actions'))">‹</button>
+      <span>${moisFR[habitMonth]} ${habitYear}</span>
+      <button onclick="habitMonth++;if(habitMonth>11){habitMonth=0;habitYear++;}renderHabitudes(document.getElementById('topbar-actions'))">›</button>
+    </div>
+
+    ${objs.length===0
+      ? `<div class="empty"><div class="empty-icon">🎯</div><h3>Aucune habitude</h3><p>Ajoute tes premières habitudes à suivre.</p></div>`
+      : `<div style="overflow-x:auto">
+          <div class="habit-day-labels" style="padding-left:200px;margin-bottom:4px">
+            ${Array.from({length:daysInMonth},(_,i)=>`
+              <div class="habit-day-label" style="${i+1===todayD.getDate()&&habitMonth===todayD.getMonth()&&habitYear===todayD.getFullYear()?'color:var(--accent);font-weight:700':''}">
+                ${i+1}
+              </div>`).join('')}
+            <div style="width:40px;text-align:right;font-size:9px;color:var(--text3)">%</div>
+          </div>
+          ${objs.map(h => {
+            const rowKey = `${monthKey}_${h.id}`;
+            const rowData = suivi[rowKey] || {};
+            const done = Object.values(rowData).filter(v=>v==='✅').length;
+            const pct = Math.round(done/daysInMonth*100);
+            return `<div class="habit-row">
+              <div class="habit-name" title="${esc(h.nom)}">${esc(h.nom)}</div>
+              ${Array.from({length:daysInMonth},(_,i)=>{
+                const d = String(i+1).padStart(2,'0');
+                const val = rowData[d]||'';
+                const isToday = i+1===todayD.getDate()&&habitMonth===todayD.getMonth()&&habitYear===todayD.getFullYear();
+                return `<div class="habit-cell${val==='✅'?' done':val==='❌'?' skip':''}${isToday?' today':''}"
+                  onclick="toggleHabit('${h.id}','${monthKey}','${d}')"
+                  title="${moisFR[habitMonth]} ${i+1}">
+                  ${val==='✅'?'✓':val==='❌'?'×':''}
+                </div>`;
+              }).join('')}
+              <div class="habit-pct">${pct}%</div>
+              <button class="icon-action" style="margin-left:4px" onclick="deleteHabit('${h.id}')">🗑️</button>
+            </div>`;
+          }).join('')}
+        </div>`}
+  </div>`;
+}
+
+function toggleHabit(habitId, monthKey, day) {
+  const rowKey = `${monthKey}_${habitId}`;
+  if(!DB.habitudes.suivi) DB.habitudes.suivi = {};
+  if(!DB.habitudes.suivi[rowKey]) DB.habitudes.suivi[rowKey] = {};
+  const cur = DB.habitudes.suivi[rowKey][day]||'';
+  DB.habitudes.suivi[rowKey][day] = cur===''?'✅':cur==='✅'?'❌':'';
+  saveModule('habitudes');
+  renderHabitudes(document.getElementById('topbar-actions'));
+}
+
+function openHabitModal() {
+  openModal('🎯 Nouvelle habitude',
+    `<div class="form-row"><div class="form-group">
+      <label>Nom de l'habitude *</label>
+      <input type="text" id="f-hnom" placeholder="Ex: 🏃 Sport, 📖 Lecture…">
+    </div></div>`,
+    [{ label:'Ajouter', primary:true, action:()=>{
+      const nom = document.getElementById('f-hnom').value.trim();
+      if(!nom) return;
+      DB.habitudes.objectifs.push({ id:uid(), nom });
+      saveModule('habitudes'); closeModal();
+      renderHabitudes(document.getElementById('topbar-actions'));
+      toast('Habitude ajoutée !');
+    }}]
+  );
+}
+
+function deleteHabit(id) {
+  if(!confirm('Supprimer cette habitude et tout son suivi ?')) return;
+  DB.habitudes.objectifs = DB.habitudes.objectifs.filter(h=>h.id!==id);
+  saveModule('habitudes');
+  renderHabitudes(document.getElementById('topbar-actions'));
+}
+
+// ══════════════════════════════════════════════════════
+// JOURNAL
+// ══════════════════════════════════════════════════════
+function renderJournal(actions) {
+  const addBtn = document.createElement('button');
+  addBtn.className = 'btn btn-primary btn-sm';
+  addBtn.innerHTML = '+ Écrire';
+  addBtn.onclick = openJournalModal;
+  actions.appendChild(addBtn);
+
+  let entries = searchQuery
+    ? DB.journal.filter(j=>(j.contenu+j.gratitude+j.apprentissage).toLowerCase().includes(searchQuery.toLowerCase()))
+    : DB.journal;
+
+  const moods = { '😄':'Excellent','😊':'Bien','😐':'Neutre','😔':'Difficile','😢':'Très difficile' };
+
+  document.getElementById('content').innerHTML = `
+  <div class="animate-in">
+    <div class="search-bar">
+      <span>🔍</span>
+      <input type="text" placeholder="Rechercher dans le journal…" value="${esc(searchQuery)}"
+        oninput="searchQuery=this.value;renderJournal(document.getElementById('topbar-actions'))">
+    </div>
+    <div class="section-header"><h2>${entries.length} entrée${entries.length>1?'s':''}</h2></div>
+
+    ${entries.length===0
+      ? `<div class="empty"><div class="empty-icon">📅</div><h3>Aucune entrée</h3><p>Commence à tenir ton journal quotidien.</p></div>`
+      : [...entries].sort((a,b)=>b.date>a.date?1:-1).map(j=>`
+        <div class="journal-entry animate-in">
+          <div class="journal-date">
+            <span class="mood-badge">${j.humeur||'📅'}</span>
+            <span>${fmtDate(j.date)}</span>
+            ${j.humeur&&moods[j.humeur]?`<span class="tag" style="font-size:10px">${moods[j.humeur]}</span>`:''}
+            <span style="margin-left:auto;display:flex;gap:4px">
+              <button class="icon-action" onclick="editJournal('${j.id}')">✏️</button>
+              <button class="icon-action" onclick="deleteItem('journal','${j.id}')">🗑️</button>
+            </span>
+          </div>
+          ${j.contenu?`<div class="journal-content">${esc(j.contenu)}</div>`:''}
+          ${(j.gratitude||j.apprentissage)?`
+          <div class="journal-sections">
+            ${j.gratitude?`<div class="journal-section"><h4>✨ Gratitude</h4><p>${esc(j.gratitude)}</p></div>`:''}
+            ${j.apprentissage?`<div class="journal-section"><h4>🌟 Apprentissage</h4><p>${esc(j.apprentissage)}</p></div>`:''}
+          </div>`:''}
+          <div id="ai-journal-${j.id}"></div>
+          <div style="margin-top:10px">
+            <button class="btn btn-ai btn-sm" onclick="aiJournalReflect(DB.journal.find(x=>x.id==='${j.id}'));document.getElementById('ai-journal-${j.id}').style.display='block'">✨ Question de réflexion</button>
+          </div>
+        </div>`).join('')}
+  </div>`;
+}
+
+function openJournalModal(item=null) {
+  const isEdit = !!item;
+  openModal(isEdit?'✏️ Modifier':'📅 Nouvelle entrée',
+    `<div class="form-row cols-2">
+      <div class="form-group"><label>Date</label>
+        <input type="date" id="f-jdate" value="${item?.date||today()}"></div>
+      <div class="form-group"><label>Humeur</label>
+        <select id="f-hmood">${['','😄','😊','😐','😔','😢'].map(m=>`<option ${item?.humeur===m?'selected':''}>${m}</option>`).join('')}</select></div>
+    </div>
+    <div class="form-row"><div class="form-group">
+      <label>Entrée du jour</label>
+      <textarea id="f-jcont" rows="5" placeholder="Comment s'est passée ta journée ?">${esc(item?.contenu||'')}</textarea>
+    </div></div>
+    <div class="form-row"><div class="form-group">
+      <label>✨ Gratitude (3 choses)</label>
+      <textarea id="f-jgrat" rows="3" placeholder="Je suis reconnaissant(e) pour…">${esc(item?.gratitude||'')}</textarea>
+    </div></div>
+    <div class="form-row"><div class="form-group">
+      <label>🌟 Apprentissage / Réflexion</label>
+      <textarea id="f-jlearn" rows="3" placeholder="Ce que j'ai appris aujourd'hui…">${esc(item?.apprentissage||'')}</textarea>
+    </div></div>`,
+    [{ label:isEdit?'Enregistrer':'Écrire', primary:true, action:()=>{
+      const obj = { date:document.getElementById('f-jdate').value,
+        humeur:document.getElementById('f-hmood').value,
+        contenu:document.getElementById('f-jcont').value,
+        gratitude:document.getElementById('f-jgrat').value,
+        apprentissage:document.getElementById('f-jlearn').value };
+      if(isEdit) Object.assign(item, obj);
+      else DB.journal.push({ id:uid(), ...obj });
+      saveModule('journal'); closeModal(); renderJournal(document.getElementById('topbar-actions'));
+      toast(isEdit?'Entrée modifiée !':'Entrée sauvegardée !');
+    }}]
+  );
+}
+function editJournal(id) { openJournalModal(DB.journal.find(j=>j.id===id)); }
+
+// ══════════════════════════════════════════════════════
+// MODAL SYSTEM
+// ══════════════════════════════════════════════════════
+function openModal(title, body, buttons=[]) {
+  document.getElementById('modal-title').textContent = title;
+  document.getElementById('modal-body').innerHTML = body;
+  const footer = document.getElementById('modal-footer');
+  footer.innerHTML = '';
+  buttons.forEach(b => {
+    const btn = document.createElement('button');
+    btn.className = `btn ${b.primary?'btn-primary':'btn-ghost'}`;
+    btn.textContent = b.label;
+    btn.onclick = b.action;
+    footer.appendChild(btn);
+  });
+  document.getElementById('modal-overlay').classList.add('open');
+  setTimeout(()=>{ const f=document.querySelector('#modal-body input,#modal-body textarea'); if(f)f.focus(); },200);
+}
+function closeModal() { document.getElementById('modal-overlay').classList.remove('open'); }
+function closeModalOutside(e) { if(e.target===document.getElementById('modal-overlay')) closeModal(); }
+
+// ══════════════════════════════════════════════════════
+// GENERIC DELETE
+// ══════════════════════════════════════════════════════
+function deleteItem(module, id) {
+  if(!confirm('Supprimer cet élément ?')) return;
+  DB[module] = DB[module].filter(x=>x.id!==id);
+  saveModule(module);
+  render();
+  toast('Supprimé.');
+}
+
+// ══════════════════════════════════════════════════════
+// AI HELPERS
+// ══════════════════════════════════════════════════════
+let chatHistory = [];
+
+async function aiCall(action, payload) {
+  const r = await fetch(`${API}/ai/${action}`, {
+    method:'POST', headers:{'Content-Type':'application/json'},
+    body: JSON.stringify(payload)
+  });
+  const d = await r.json();
+  if (!r.ok) throw new Error(d.message || d.error || 'Erreur IA');
+  return d.result;
+}
+
+function aiLoadingHtml(msg='✨ Gemini réfléchit…') {
+  return `<div class="ai-result"><div class="ai-result-header ai-loading">✨ ${msg}</div></div>`;
+}
+
+function aiResultHtml(content, title='✨ Suggestion IA') {
+  if (typeof content === 'object') content = JSON.stringify(content, null, 2);
+  return `<div class="ai-result"><div class="ai-result-header">✨ ${title}</div>${esc(content)}</div>`;
+}
+
+// ── Inbox : catégoriser automatiquement ──
+async function aiCategorizeInbox(item) {
+  const btn = document.getElementById(`ai-btn-${item.id}`);
+  if(btn) { btn.disabled=true; btn.textContent='…'; }
+  try {
+    const result = await aiCall('categorize', {texte: item.texte});
+    item.categorie    = result.categorie    || item.categorie;
+    item.priorite     = result.priorite     || item.priorite;
+    item.destination  = result.destination  || item.destination;
+    await saveModule('inbox');
+    toast('✨ Catégorisé par Gemini !');
+    renderInbox(document.getElementById('topbar-actions'));
+  } catch(e) {
+    toast(e.message, false);
+    if(btn) { btn.disabled=false; btn.textContent='✨ IA'; }
+  }
+}
+
+// ── Tâches : décomposer ──
+async function aiDecomposeTask(task) {
+  const container = document.getElementById(`ai-decompose-${task.id}`);
+  if(container) container.innerHTML = aiLoadingHtml('Décomposition…');
+  try {
+    const subtasks = await aiCall('decompose', {titre: task.titre, notes: task.notes||''});
+    const newTasks = subtasks.map(t => ({
+      id: uid(), titre: t, projet: task.projet||'', echeance: '',
+      statut: 'À faire', priorite: task.priorite||'', contexte: task.contexte||'', notes: ''
+    }));
+    if(container) {
+      container.innerHTML = `<div class="ai-result">
+        <div class="ai-result-header">✨ ${subtasks.length} sous-tâches suggérées</div>
+        ${subtasks.map((t,i)=>`<div style="padding:4px 0;display:flex;align-items:center;gap:8px">
+          <input type="checkbox" id="st-${i}" checked style="accent-color:var(--accent)">
+          <label for="st-${i}" style="font-size:13px;cursor:pointer">${esc(t)}</label>
+        </div>`).join('')}
+        <button class="btn btn-ai" style="margin-top:10px" onclick="addCheckedSubtasks(${JSON.stringify(newTasks).replace(/"/g,'&quot;')})">
+          + Ajouter les sélectionnées
+        </button>
+      </div>`;
+    }
+  } catch(e) {
+    if(container) container.innerHTML = `<div class="ai-result" style="color:var(--danger)">${esc(e.message)}</div>`;
+    toast(e.message, false);
+  }
+}
+
+function addCheckedSubtasks(tasks) {
+  tasks.forEach((t,i) => {
+    const cb = document.getElementById(`st-${i}`);
+    if(cb && cb.checked) DB.taches.push(t);
+  });
+  saveModule('taches');
+  renderTaches(document.getElementById('topbar-actions'));
+  toast(`✨ Sous-tâches ajoutées !`);
+}
+
+// ── Savoir : résumer ──
+async function aiSummarizeResource(item) {
+  const container = document.getElementById(`ai-savoir-${item.id}`);
+  if(container) container.innerHTML = aiLoadingHtml('Analyse…');
+  try {
+    const result = await aiCall('summarize', {titre: item.titre, source: item.source||''});
+    item.resume = result.resume || item.resume;
+    if(!item.type && result.type) item.type = result.type;
+    await saveModule('savoir');
+    if(container) {
+      container.innerHTML = `<div class="ai-result">
+        <div class="ai-result-header">✨ Résumé généré</div>
+        <p style="margin-bottom:8px">${esc(result.resume)}</p>
+        ${result.points_cles?.map(p=>`<div style="padding:2px 0;font-size:12px">• ${esc(p)}</div>`).join('')||''}
+        <button class="btn btn-ai btn-sm" style="margin-top:8px" onclick="this.closest('.ai-result').remove();renderSavoir(document.getElementById('topbar-actions'))">
+          ✓ Appliqué — Fermer
+        </button>
+      </div>`;
+    }
+  } catch(e) {
+    if(container) container.innerHTML = `<div class="ai-result" style="color:var(--danger)">${esc(e.message)}</div>`;
+    toast(e.message, false);
+  }
+}
+
+// ── Journal : question de réflexion ──
+async function aiJournalReflect(item) {
+  const container = document.getElementById(`ai-journal-${item.id}`);
+  if(container) container.innerHTML = aiLoadingHtml('Génération…');
+  try {
+    const result = await aiCall('journal_prompt', {contenu: item.contenu||'', humeur: item.humeur||''});
+    if(container) container.innerHTML = aiResultHtml(result, '💭 Question de réflexion');
+  } catch(e) {
+    if(container) container.innerHTML = `<div class="ai-result" style="color:var(--danger)">${esc(e.message)}</div>`;
+  }
+}
+
+// ══════════════════════════════════════════════════════
+// AI PAGE
+// ══════════════════════════════════════════════════════
+function renderAI(actions) {
+  document.getElementById('content').innerHTML = `
+  <div class="animate-in">
+    <div class="ai-grid">
+      <div class="ai-feature-card" onclick="openWeeklyReview()">
+        <div class="ai-feature-icon">📊</div>
+        <div class="ai-feature-title">Bilan hebdomadaire</div>
+        <div class="ai-feature-desc">Analyse de ton 2ème cerveau avec priorités et conseils personnalisés.</div>
+      </div>
+      <div class="ai-feature-card" onclick="navigate('inbox')">
+        <div class="ai-feature-icon">🏷️</div>
+        <div class="ai-feature-title">Catégorisation auto</div>
+        <div class="ai-feature-desc">Gemini analyse tes idées inbox et suggère catégorie, priorité et destination.</div>
+      </div>
+      <div class="ai-feature-card" onclick="navigate('taches')">
+        <div class="ai-feature-icon">🔀</div>
+        <div class="ai-feature-title">Décomposition de tâches</div>
+        <div class="ai-feature-desc">Transforme une grande tâche en sous-tâches concrètes et actionnables.</div>
+      </div>
+      <div class="ai-feature-card" onclick="navigate('savoir')">
+        <div class="ai-feature-icon">📝</div>
+        <div class="ai-feature-title">Résumé de ressources</div>
+        <div class="ai-feature-desc">Génère automatiquement le résumé et les points clés de tes ressources.</div>
+      </div>
+    </div>
+
+    <div id="weekly-review-result"></div>
+
+    <div style="margin-bottom:12px">
+      <div class="section-header" style="margin-bottom:12px">
+        <h2>💬 Assistant IA — Chat libre</h2>
+      </div>
+      <div class="chat-container">
+        <div class="chat-messages" id="chat-messages">
+          <div class="chat-msg ai">Bonjour ! Je suis ton assistant IA propulsé par Gemini. Je connais le contenu de ton 2ème cerveau et je peux t'aider à mieux l'organiser. Pose-moi n'importe quelle question !</div>
+        </div>
+        <div class="chat-input-row">
+          <input type="text" id="chat-input" placeholder="Pose une question, demande un conseil…" onkeydown="if(event.key==='Enter')sendChat()">
+          <button class="btn btn-primary" onclick="sendChat()">Envoyer</button>
+          <button class="btn btn-ghost btn-icon" onclick="clearChat()" title="Effacer">🗑️</button>
+        </div>
+      </div>
+    </div>
+  </div>`;
+}
+
+async function openWeeklyReview() {
+  const container = document.getElementById('weekly-review-result');
+  if(!container) return;
+  container.innerHTML = aiLoadingHtml('Analyse de ton cerveau…');
+  try {
+    const result = await aiCall('weekly_review', {});
+    container.innerHTML = `<div class="ai-result" style="margin-bottom:20px">
+      <div class="ai-result-header">📊 Bilan de la semaine</div>
+      ${esc(result)}
+    </div>`;
+  } catch(e) {
+    container.innerHTML = `<div class="ai-result" style="color:var(--danger)">${esc(e.message)}</div>`;
+  }
+}
+
+async function sendChat() {
+  const input = document.getElementById('chat-input');
+  const msg = input.value.trim();
+  if(!msg) return;
+  input.value = '';
+
+  const msgs = document.getElementById('chat-messages');
+  msgs.innerHTML += `<div class="chat-msg user animate-in">${esc(msg)}</div>`;
+  msgs.innerHTML += `<div class="chat-msg ai loading animate-in" id="chat-loading">✨ Gemini réfléchit…</div>`;
+  msgs.scrollTop = msgs.scrollHeight;
+
+  try {
+    const result = await aiCall('chat', {message: msg});
+    const loading = document.getElementById('chat-loading');
+    if(loading) { loading.textContent = result; loading.id=''; loading.classList.remove('loading'); }
+  } catch(e) {
+    const loading = document.getElementById('chat-loading');
+    if(loading) { loading.textContent = e.message; loading.style.color='var(--danger)'; loading.id=''; }
+  }
+  msgs.scrollTop = msgs.scrollHeight;
+}
+
+function clearChat() {
+  document.getElementById('chat-messages').innerHTML =
+    '<div class="chat-msg ai">Conversation effacée. Comment puis-je t\'aider ?</div>';
+}
+
+// ══════════════════════════════════════════════════════
+// SETTINGS PAGE
+// ══════════════════════════════════════════════════════
+async function renderSettings(actions) {
+  const maskedKey = GEMINI_KEY.length > 4
+    ? '•'.repeat(GEMINI_KEY.length - 4) + GEMINI_KEY.slice(-4)
+    : GEMINI_KEY ? '••••' : '';
+
+  document.getElementById('content').innerHTML = `
+  <div class="animate-in" style="max-width:600px">
+    <div class="settings-section">
+      <h3>🔑 Clé API Gemini</h3>
+      <p style="font-size:13px;color:var(--text2);margin-bottom:14px;line-height:1.6">
+        Pour activer l'IA, tu as besoin d'une clé API Gemini gratuite.<br>
+        <a href="https://aistudio.google.com/apikey" target="_blank" style="color:var(--accent)">
+          → Obtenir une clé gratuite sur Google AI Studio
+        </a>
+      </p>
+      ${GEMINI_KEY ? `
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px;font-size:13px">
+          <span style="color:var(--task)">✅ Clé configurée :</span>
+          <code style="background:var(--bg3);padding:3px 8px;border-radius:4px;font-size:12px">${esc(maskedKey)}</code>
+        </div>` : `
+        <div style="color:var(--danger);font-size:13px;margin-bottom:12px">⚠️ Aucune clé configurée — l'IA est désactivée.</div>`}
+      <div class="key-input-row">
+        <input type="password" id="api-key-input" placeholder="AIzaSy…" autocomplete="off">
+        <button class="btn btn-primary" onclick="saveApiKey()">Enregistrer</button>
+      </div>
+      <p style="font-size:11px;color:var(--text3);margin-top:8px">
+        🔒 Ta clé est stockée uniquement dans IndexedDB sur ton appareil.
+      </p>
+    </div>
+
+    <div class="settings-section">
+      <h3>🤖 Modèle utilisé</h3>
+      <div style="display:flex;align-items:center;gap:10px">
+        <span class="tag habit" style="font-size:13px;padding:5px 12px">gemini-2.5-flash</span>
+        <span style="font-size:12px;color:var(--text2)">Gratuit · Rapide · Français</span>
+      </div>
+    </div>
+
+    <div class="settings-section">
+      <h3>💾 Données</h3>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;font-size:13px">
+        <div>📥 Inbox : <strong>${DB.inbox.length}</strong></div>
+        <div>✅ Tâches : <strong>${DB.taches.length}</strong></div>
+        <div>📚 Savoir : <strong>${DB.savoir.length}</strong></div>
+        <div>📅 Journal : <strong>${DB.journal.length}</strong></div>
+      </div>
+      <p style="font-size:11px;color:var(--text3);margin-top:10px">
+        Données stockées en local sur cet appareil (IndexedDB).
+      </p>
+      <button class="btn btn-danger btn-sm" style="margin-top:12px" onclick="clearAllData()">
+        🗑️ Effacer toutes les données
+      </button>
+    </div>
+  </div>`;
+}
+
+async function saveApiKey() {
+  const key = document.getElementById('api-key-input').value.trim();
+  if (!key) { toast('Entre une clé API', false); return; }
+  await saveGeminiKey(key);
+  toast('✅ Clé API sauvegardée !');
+  document.getElementById('api-key-input').value = '';
+  renderSettings(document.getElementById('topbar-actions'));
+}
+
+async function clearAllData() {
+  if (!confirm('Effacer TOUTES les données ? Cette action est irréversible.')) return;
+  DB = { inbox:[], taches:[], savoir:[], habitudes:{objectifs:[],suivi:{}}, journal:[] };
+  await idbSet('data', 'main', DB);
+  toast('Données effacées.'); navigate('dashboard');
+}
+
+// ══════════════════════════════════════════════════════
+// MORE MENU (mobile)
+// ══════════════════════════════════════════════════════
+function openMoreMenu()  { document.getElementById('more-menu').style.display = 'block'; }
+function closeMoreMenu() { document.getElementById('more-menu').style.display = 'none'; }
+
+// ══════════════════════════════════════════════════════
+// PWA INSTALL
+// ══════════════════════════════════════════════════════
+let deferredPrompt = null;
+
+window.addEventListener('beforeinstallprompt', e => {
+  e.preventDefault();
+  deferredPrompt = e;
+  // Show banner only if not already installed
+  if (!window.matchMedia('(display-mode: standalone)').matches) {
+    const dismissed = localStorage.getItem('pwa-dismissed');
+    if (!dismissed) {
+      setTimeout(() => document.getElementById('install-banner').classList.add('show'), 3000);
+    }
+  }
+});
+
+async function installPWA() {
+  document.getElementById('install-banner').classList.remove('show');
+  if (deferredPrompt) {
+    deferredPrompt.prompt();
+    const { outcome } = await deferredPrompt.userChoice;
+    if (outcome === 'accepted') toast('🎉 App installée !');
+    deferredPrompt = null;
+  }
+}
+
+function dismissInstall() {
+  document.getElementById('install-banner').classList.remove('show');
+  localStorage.setItem('pwa-dismissed', '1');
+}
+
+// ══════════════════════════════════════════════════════
+// INIT
+// ══════════════════════════════════════════════════════
+// Sidebar date (desktop)
+const sidebarDate = document.getElementById('sidebar-date');
+if (sidebarDate) {
+  sidebarDate.textContent = new Date().toLocaleDateString('fr-BE',{weekday:'long',day:'numeric',month:'long'});
+}
+
+// Register Service Worker
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('/sw.js')
+    .then(reg => console.log('SW registered:', reg.scope))
+    .catch(err => console.warn('SW registration failed:', err));
+}
+
+// Load data then render
+loadData().then(() => render());
+</script>
+</body>
+</html>
