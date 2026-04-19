@@ -896,10 +896,18 @@ label { font-size: 12px; color: var(--text2); margin-bottom: 4px; display: block
   <div style="position:absolute;bottom:0;left:0;right:0;background:var(--bg2);border-radius:16px 16px 0 0;padding:20px 16px 40px" onclick="event.stopPropagation()">
     <div style="width:40px;height:4px;background:var(--border2);border-radius:2px;margin:0 auto 20px"></div>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
-      ${[['🎯','Habitudes','habitudes'],['📅','Journal','journal'],['✨','Assistant IA','ai'],['⚙️','Paramètres','settings']].map(([icon,label,mod])=>`
-      <button onclick="navigate('${mod}');closeMoreMenu()" style="background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius);padding:16px;display:flex;flex-direction:column;align-items:center;gap:6px;font-size:12px;color:var(--text);font-family:var(--font);cursor:pointer">
-        <span style="font-size:24px">${icon}</span>${label}
-      </button>`).join('')}
+      <button onclick="navigate('habitudes');closeMoreMenu()" style="background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius);padding:16px;display:flex;flex-direction:column;align-items:center;gap:6px;font-size:12px;color:var(--text);font-family:var(--font);cursor:pointer">
+        <span style="font-size:24px">🎯</span>Habitudes
+      </button>
+      <button onclick="navigate('journal');closeMoreMenu()" style="background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius);padding:16px;display:flex;flex-direction:column;align-items:center;gap:6px;font-size:12px;color:var(--text);font-family:var(--font);cursor:pointer">
+        <span style="font-size:24px">📅</span>Journal
+      </button>
+      <button onclick="navigate('ai');closeMoreMenu()" style="background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius);padding:16px;display:flex;flex-direction:column;align-items:center;gap:6px;font-size:12px;color:var(--text);font-family:var(--font);cursor:pointer">
+        <span style="font-size:24px">✨</span>Assistant IA
+      </button>
+      <button onclick="navigate('settings');closeMoreMenu()" style="background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius);padding:16px;display:flex;flex-direction:column;align-items:center;gap:6px;font-size:12px;color:var(--text);font-family:var(--font);cursor:pointer">
+        <span style="font-size:24px">⚙️</span>Paramètres
+      </button>
     </div>
   </div>
 </div>
